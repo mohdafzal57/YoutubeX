@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">YoutubeX</string>
+
+    <string name="error_no_internet">No internet connection</string>
+    <string name="error_timeout">Request timed out</string>
+    <string name="error_unauthorized">Unauthorized request</string>
+    <string name="error_too_many_requests">Too many requests</string>
+    <string name="error_server">Server error</string>
+    <string name="error_serialization">Failed to parse server response</string>
+    <string name="error_empty_body">Empty response body</string>
+    <string name="error_unknown">Something went wrong</string>
+
+    <!-- Sign In Errors -->
+    <string name="error_identifier_empty">username or email cannot be empty</string>
+    <string name="error_password_too_short">Password must be at least %1$d characters long</string>
+    <string name="error_invalid_credentials">Invalid username or password</string>
+    <string name="error_server_error">Server error, please try again later</string>
+    <string name="error_identifier_too_short">username must be at least 3 letters longer</string>
+    <string name="error_password_empty">Password can\'t be empty</string>
+
+    <!-- Sign In Screen -->
+    <string name="email_or_username">Email or username</string>
+    <string name="password">Password</string>
+    <string name="log_in">Log in</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="no_account">Don’t have an account?</string>
+    <string name="sign_up">Sign up</string>
+
+    <!-- Sign Up Screen -->
+    <string name="cover">Cover</string>
+    <string name="edit_cover">Edit cover</string>
+    <string name="avatar">Avatar</string>
+    <string name="add_avatar">Add avatar</string>
+    <string name="create_account">Create Account</string>
+    <string name="enter_details_to_register">Enter your details to register</string>
+    <string name="full_name">Full Name</string>
+    <string name="username">Username</string>
+    <string name="email_address">Email Address</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_in">Sign In</string>
+    <string name="uploading">Uploading…</string>
+
+</resources>

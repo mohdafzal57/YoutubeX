@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.NoteXSplash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/youtube_splash2_ic</item>
+        <item name="postSplashScreenTheme">@style/Theme.NoteX</item>
+    </style>
+
+    <style name="Theme.NoteX" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
