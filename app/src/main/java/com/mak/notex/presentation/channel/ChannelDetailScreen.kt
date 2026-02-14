@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -89,6 +90,8 @@ fun ChannelDetailsScreen(
             title = uiState.profile?.username ?: "",
             showBackButton = true,
             onBackClick = onNavigateBack,
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground
         ) { paddingValues ->
 
             if (uiState.isLoading) {
@@ -100,28 +103,85 @@ fun ChannelDetailsScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues),
+                        .background(MaterialTheme.colorScheme.background),
+                    // Removed top paddingValues from here if you want the banner to touch the top bar
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    // 1. Channel Banner
                     item {
-                        AsyncImage(
-                            model = uiState.profile?.coverImage ?: "",
-                            contentDescription = "Channel Banner",
+                        // --- 1. Banner with Rounded Corners ---
+                        // The image in the screenshot has a slight margin and rounded corners
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(100.dp)
-                                .background(MaterialTheme.colorScheme.surfaceVariant), // Adjust height as per screenshot
-                            contentScale = ContentScale.Crop
-                        )
+                                .padding(horizontal = 12.dp, vertical = 8.dp) // Creates the "floating" banner look
+                                .aspectRatio(3.5f) // Matches the slim profile of YouTube banners
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            AsyncImage(
+                                model = uiState.profile?.coverImage ?: "",
+                                contentDescription = "Channel Banner",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     }
 
-                    // 2. Channel Info Header
                     item {
-                        ChannelHeaderSection(uiState.profile!!)
+                        val profile = uiState.profile!!
+                        // --- 2. Channel Info Row ---
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Avatar with a specific background color for that "circular frame" look
+                            AsyncImage(
+                                model = profile.avatar,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF0F1B1B)), // Darker tint often seen behind logos
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                // Channel Name (Bold & Large)
+                                Text(
+                                    text = profile.username,
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 22.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                // Handle / Username
+                                Text(
+                                    text = "@${profile.fullName.lowercase().replace(" ", "")}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+
+                                // Subscriber and Video count metadata
+                                Text(
+                                    text = "${profile.subscribersCount} subscribers • ${/*profile.videosCount ?: 0*/ 5} videos",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
                     }
 
-                    // 3. Subscribe Button
+
                     item {
                         YouTubeSubscribeButton(
                             isSubscribed = uiState.isSubscribed,
@@ -138,7 +198,6 @@ fun ChannelDetailsScreen(
                         Spacer(modifier = Modifier.padding(bottom = 16.dp))
                     }
 
-                    // 4. Filter Chips (Latest, Popular, Oldest)
                     item {
                         FilterChipsRow(
                             selectedSort = uiState.sortType,
@@ -147,7 +206,6 @@ fun ChannelDetailsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    // 5. Video List
                     items(
                         count = videos.itemCount,
                         key = videos.itemKey { it.id }
@@ -166,7 +224,9 @@ fun ChannelDetailsScreen(
 
                         is LoadState.Error -> {
                             item {
-                                RetryFooter { videos.retry() }
+                                RetryFooter(
+                                    onRetry = {videos.retry()}
+                                )
                             }
                         }
 
@@ -176,7 +236,6 @@ fun ChannelDetailsScreen(
             }
 
         }
-        // We use a single LazyColumn for the entire page so the header scrolls with the content
     }
     if (showBottomSheet) {
         NotificationSettingsSheet(
@@ -188,51 +247,12 @@ fun ChannelDetailsScreen(
         )
     }
 }
-
 @Composable
 fun ChannelHeaderSection(
     profile: UserChannel,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AsyncImage(
-            model = profile.avatar,
-            contentDescription = null,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentScale = ContentScale.Crop
-        )
 
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column {
-            Text(
-                text = profile.username,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = "@${profile.fullName} • ${profile.subscribersCount} subscribers",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "More about this channel...",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-    }
 }
 
 @Composable

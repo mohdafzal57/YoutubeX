@@ -8,7 +8,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,29 +24,49 @@ fun AppScaffold(
     floatingActionButton: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     snackbarHost: @Composable (() -> Unit) = {},
+    containerColor: Color = MaterialTheme.colorScheme.background,
+    contentColor: Color = MaterialTheme.colorScheme.onBackground,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(title) },
+                title = {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                },
                 navigationIcon = {
                     if (showBackButton) {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.Default.ArrowBack, "Back")
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
                         }
                     }
                 },
-                actions = { if (showActions) actions() }
+                actions = { if (showActions) actions() },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = containerColor,
+                    titleContentColor = contentColor,
+                    navigationIconContentColor = contentColor,
+                    actionIconContentColor = contentColor
+                )
             )
         },
         snackbarHost = snackbarHost,
         floatingActionButton = floatingActionButton,
         bottomBar = bottomBar,
+        containerColor = containerColor,
+        contentColor = contentColor,
         content = content
     )
 }
-
 // shared/components/LoadingScreen.kt
 @Composable
 fun LoadingScreen() {

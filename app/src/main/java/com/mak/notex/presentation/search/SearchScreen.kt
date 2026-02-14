@@ -120,7 +120,7 @@ internal fun SearchScreen(
         SearchToolbar(
             onBackClick = onBackClick,
             onSearchQueryChanged = onSearchQueryChanged,
-            onSearchTriggered = { /* Debounced in ViewModel */ },
+            onSearchTriggered = { },
             searchQuery = searchQuery,
         )
         Box(modifier = Modifier.weight(1f)) {
@@ -138,12 +138,19 @@ internal fun SearchScreen(
                 }
                 SearchResultUiState.EmptyQuery -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Enter at least 2 characters to search", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "Enter at least 2 characters to search",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
                 SearchResultUiState.LoadFailed -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Failed to load results")
+                        Text(
+                            text = "Failed to load results",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
                 SearchResultUiState.Loading -> {
@@ -157,7 +164,6 @@ internal fun SearchScreen(
         Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.safeDrawing))
     }
 }
-
 @Composable
 private fun SearchResultBody(
     videos: LazyPagingItems<VideoFeed>,
@@ -165,7 +171,9 @@ private fun SearchResultBody(
     onNavigateToChannel: (String, String) -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
         items(
@@ -176,23 +184,32 @@ private fun SearchResultBody(
                 VideoItem(
                     video = video,
                     onClick = { onVideoClick(video.videoFile, video.id) },
-                    onNavigateToChannel = {onNavigateToChannel(video.username, video.ownerId)}
+                    onNavigateToChannel = { onNavigateToChannel(video.username, video.ownerId) }
                 )
             }
         }
 
         when (videos.loadState.append) {
             is LoadState.Loading -> {
-                item { BottomLoader() }
+                item {
+                    BottomLoader(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             is LoadState.Error -> {
-                item { RetryFooter { videos.retry() } }
+                item {
+                    RetryFooter(
+                        textColor = MaterialTheme.colorScheme.error,
+                        buttonColor = MaterialTheme.colorScheme.primary,
+                        onRetry = { videos.retry() }
+                    )
+                }
             }
             else -> {}
         }
     }
 }
-
 @Composable
 fun EmptySearchResultBody(
     searchQuery: String
@@ -202,6 +219,7 @@ fun EmptySearchResultBody(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 48.dp),
     ) {
         val message = "Result for \"$searchQuery\" not found"
@@ -212,7 +230,10 @@ fun EmptySearchResultBody(
                     text = message,
                     spanStyles = listOf(
                         AnnotatedString.Range(
-                            SpanStyle(fontWeight = FontWeight.Bold),
+                            SpanStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            ),
                             start = start,
                             end = start + searchQuery.length,
                         ),
@@ -222,12 +243,12 @@ fun EmptySearchResultBody(
                 AnnotatedString(message)
             },
             style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 24.dp),
         )
     }
 }
-
 @Composable
 private fun SearchNotReadyBody() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

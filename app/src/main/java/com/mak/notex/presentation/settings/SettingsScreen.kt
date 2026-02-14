@@ -27,7 +27,6 @@ fun SettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = LocalSnackbarHostState.current
 
-    // Handle one-time events
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -69,14 +68,18 @@ fun SettingsScreen(
     ) {
         when {
             state.isLoading && state.userProfile == null -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
 
             state.error != null && state.userProfile == null -> {
                 ErrorContent(
                     error = state.error!!,
                     onRetry = { viewModel.handleIntent(SettingsIntent.LoadUserProfile) },
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.error
                 )
             }
 
@@ -94,7 +97,14 @@ fun SettingsScreen(
         }
 
         if (state.isLoading && state.userProfile != null) {
-            LoadingScreen()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
         }
 
         if (state.showEditDialog) {
@@ -118,5 +128,4 @@ fun SettingsScreen(
         }
     }
 }
-
 
