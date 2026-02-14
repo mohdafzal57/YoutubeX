@@ -30,7 +30,7 @@ import coil.request.ImageRequest
 import com.mak.notex.domain.model.VideoFeed
 import java.util.Locale
 
-private fun formatDuration(duration: Double): String {
+internal fun formatDuration(duration: Double): String {
     val seconds = duration.toInt()
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60

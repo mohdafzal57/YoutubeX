@@ -1,5 +1,8 @@
 package com.mak.notex.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class UserVideo(
     val id: String,
     val videoFile: String,

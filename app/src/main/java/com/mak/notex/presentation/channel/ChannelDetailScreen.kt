@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,11 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -53,6 +51,7 @@ import com.mak.notex.domain.model.UserChannel
 import com.mak.notex.domain.model.UserVideo
 import com.mak.notex.presentation.common.AppScaffold
 import com.mak.notex.presentation.common.LoadingScreen
+import com.mak.notex.presentation.common.formatDuration
 import com.mak.notex.presentation.home.BottomLoader
 import com.mak.notex.presentation.home.RetryFooter
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
@@ -107,12 +106,12 @@ fun ChannelDetailsScreen(
                     // 1. Channel Banner
                     item {
                         AsyncImage(
-                            model = uiState.profile?.coverImage
-                                ?: "https://via.placeholder.com/800x200/black/red?text=Every+Soul+Will+Taste+Death",
+                            model = uiState.profile?.coverImage ?: "",
                             contentDescription = "Channel Banner",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(100.dp), // Adjust height as per screenshot
+                                .height(100.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant), // Adjust height as per screenshot
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -136,7 +135,7 @@ fun ChannelDetailsScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         )
-                        Spacer(modifier = Modifier.padding(bottom = 8.dp))
+                        Spacer(modifier = Modifier.padding(bottom = 16.dp))
                     }
 
                     // 4. Filter Chips (Latest, Popular, Oldest)
@@ -154,7 +153,7 @@ fun ChannelDetailsScreen(
                         key = videos.itemKey { it.id }
                     ) { index ->
                         videos[index]?.let { video ->
-                            VideoListItem(
+                            VideoCard(
                                 video = video,
                                 onClick = { onPlayVideo(video.videoFile, video.id) },
                             )
@@ -191,72 +190,48 @@ fun ChannelDetailsScreen(
 }
 
 @Composable
-fun ChannelHeaderSection(profile: UserChannel) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Avatar
-            AsyncImage(
-                model = profile.avatar,
-                contentDescription = "Avatar",
-                modifier = Modifier
-                    .size(70.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black),
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Text Info
-            Column {
-                Text(
-                    text = profile.username,
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    )
-                )
-
-                // Using AnnotatedString to style the bullet point if needed, or simple concatenation
-                Text(
-                    text = ("@" + profile.username),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp)
-                )
-                Text(
-                    text = "${profile.subscribersCount} subscribers • 1.3K videos",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    )
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Description Snippet
-        Text(
-            text = buildAnnotatedString {
-                append("Welcome to your official YouTube channel, ${profile.username} . ...")
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                    append("more")
-                }
-            },
-            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray, fontSize = 13.sp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+fun ChannelHeaderSection(
+    profile: UserChannel,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            model = profile.avatar,
+            contentDescription = null,
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentScale = ContentScale.Crop
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
-        // Link
-//        Text(
-//            text = "wa.me/ 97333456770",
-//            style = MaterialTheme.typography.bodyMedium.copy(
-//                fontWeight = FontWeight.Bold,
-//                fontSize = 13.sp
-//            )
-//        )
+        Column {
+            Text(
+                text = profile.username,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "@${profile.fullName} • ${profile.subscribersCount} subscribers",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "More about this channel...",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
     }
 }
 
@@ -295,18 +270,29 @@ fun FilterChipsRow(
         }
     }
 }
-
 @Composable
 fun FilterChipItem(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val containerColor = if (isSelected) {
+        MaterialTheme.colorScheme.onSurface // Black in light mode, White in dark
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant // Soft gray
+    }
+
+    val contentColor = if (isSelected) {
+        MaterialTheme.colorScheme.surface // Text color flips for contrast
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
     Surface(
-        onClick = onClick, // ✅ clickable
-        color = if (isSelected) Color.Black else Color(0xFFF2F2F2),
-        contentColor = if (isSelected) Color.White else Color.Black,
-        shape = RoundedCornerShape(8.dp),
+        onClick = onClick,
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(8.dp), // M3 uses 8.dp for small components
         modifier = Modifier.height(32.dp)
     ) {
         Box(
@@ -315,94 +301,106 @@ fun FilterChipItem(
         ) {
             Text(
                 text = text,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium
             )
         }
     }
 }
-
 @Composable
-fun VideoListItem(
-    video: UserVideo,
-    onClick: () -> Unit,
-) {
-    Column(
+fun VideoCard(video: UserVideo, onClick: () -> Unit) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp) // Gap between videos
-            .clickable { onClick() }
+            .padding(12.dp)
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.Top
     ) {
-        // 1. Thumbnail Area
+        // --- 1. Thumbnail with Duration Overlay ---
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(210.dp)
+                .width(160.dp) // Adjusted to match the aspect ratio in your image
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             AsyncImage(
                 model = video.thumbnail,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(210.dp)
+                modifier = Modifier.fillMaxSize()
             )
-            // Duration Badge
+
+            // Duration Badge (Bottom Right)
             Surface(
                 color = Color.Black.copy(alpha = 0.8f),
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(8.dp)
+                    .padding(6.dp)
             ) {
                 Text(
-                    text = video.duration.toString(),
+                    text = formatDuration(video.duration),
                     color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                 )
             }
         }
 
-        // 2. Video Details Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp, start = 12.dp, end = 12.dp),
-        ) {
-            // Title and Metadata
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = video.title,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 22.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = video.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.Gray,
-                        fontSize = 13.sp
-                    )
-                )
-            }
+        Spacer(modifier = Modifier.width(12.dp))
 
-            // Three dots icon
-            IconButton(
-                onClick = { },
-                modifier = Modifier
-                    .size(24.dp)
-                    .padding(top = 2.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Options",
-                    tint = Color.Black
-                )
-            }
+        // --- 2. Video Details ---
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = video.title,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 20.sp
+                ),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Channel Name
+            Text(
+                text = video.username,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Views and Time
+            Text(
+                text = "${formatViews(video.views)} • ${video.createdAt}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
+
+        // --- 3. More Options Menu ---
+        IconButton(
+            onClick = { /* Handle click */ },
+            modifier = Modifier.size(24.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "Options",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+fun formatViews(count: Int): String {
+    return when {
+        count >= 1_000_000 -> "${count / 1_000_000.0}M views"
+        count >= 100_000 -> "${count / 100_000.0} lakh views"
+        count >= 1_000 -> "${count / 1_000}K views"
+        else -> "$count views"
     }
 }

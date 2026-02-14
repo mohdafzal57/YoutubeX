@@ -3,6 +3,7 @@ package com.mak.notex.presentation.auth.signin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -172,50 +173,66 @@ fun SignInScreen(
                 ) {
                     Text(
                         text = stringResource(id = R.string.forgot_password),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Medium
+                        // Using onSurfaceVariant for a subtle "forgot password" link
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
                     )
                 }
             }
 
             Spacer(modifier = Modifier.weight(22f))
 
+            // Modern Google Sign-In Button style
             OutlinedButton(
                 onClick = onGoogleSignInClick,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(44.dp),
                 shape = RoundedCornerShape(100),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary),
+                // Use outline color for the border to match industry standard input fields
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                     containerColor = Color.Transparent
                 )
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Login,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = stringResource(id = R.string.continue_with_google),
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    )
                 )
             }
 
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = stringResource(id = R.string.no_account),
-                    color = textSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 TextButton(onClick = onNavigateToSignUp) {
                     Text(
                         text = stringResource(id = R.string.sign_up),
-                        color = MaterialTheme.colorScheme.tertiary,
-                        fontWeight = FontWeight.Bold
+                        // Primary color draws the user to the secondary CTA
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.ExtraBold
+                        )
                     )
                 }
             }

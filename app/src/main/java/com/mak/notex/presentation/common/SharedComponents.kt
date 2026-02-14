@@ -64,15 +64,14 @@ fun AppTextField(
     val colors = MaterialTheme.colorScheme
 
     Column(modifier = modifier) {
-
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             placeholder = {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onSurfaceVariant // your hint color
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.onSurfaceVariant
                 )
             },
             leadingIcon = leadingIcon?.let {
@@ -80,50 +79,39 @@ fun AppTextField(
                     Icon(
                         imageVector = it,
                         contentDescription = null,
-                        tint = colors.onSurfaceVariant
+                        tint = if (error != null) colors.error else colors.onSurfaceVariant
                     )
                 }
             },
-            trailingIcon = {
-                if (isPassword) {
-                    IconButton(
-                        onClick = { passwordVisible = !passwordVisible }
-                    ) {
+            trailingIcon = if (isPassword) {
+                {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible)
-                                Icons.Default.Visibility
-                            else Icons.Default.VisibilityOff,
+                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = null,
                             tint = colors.onSurfaceVariant
                         )
                     }
                 }
-            },
-            visualTransformation = if (isPassword && !passwordVisible)
-                PasswordVisualTransformation()
-            else
-                VisualTransformation.None,
-
+            } else null,
+            visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
             isError = error != null,
             enabled = enabled,
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = colors.surfaceVariant,
                 unfocusedContainerColor = colors.surfaceVariant,
-                disabledContainerColor = colors.surfaceVariant,
-
+                disabledContainerColor = colors.surfaceVariant.copy(alpha = 0.5f),
                 focusedBorderColor = colors.primary,
                 unfocusedBorderColor = colors.outline,
                 errorBorderColor = colors.error,
-
                 focusedTextColor = colors.onSurface,
                 unfocusedTextColor = colors.onSurface,
                 disabledTextColor = colors.onSurfaceVariant,
-
-                cursorColor = colors.primary
+                cursorColor = colors.primary,
+                errorCursorColor = colors.error
             )
         )
 
@@ -131,13 +119,12 @@ fun AppTextField(
             Text(
                 text = error,
                 color = colors.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
             )
         }
     }
 }
-
 @Composable
 fun PrimaryButton(
     text: String,
@@ -145,22 +132,25 @@ fun PrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     loading: Boolean = false,
-    containerColor: Color = MaterialTheme.colorScheme.tertiary,
-    contentColor: Color = Color.White
+    // Industry Standard: Use Primary/OnPrimary instead of hardcoded colors
+    containerColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
     Button(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(40.dp),
+            .height(42.dp), // Industry standard height for primary actions
         enabled = enabled && !loading,
-        shape = RoundedCornerShape(100),
+        shape = RoundedCornerShape(100), // Fully pill-shaped like YouTube
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             contentColor = contentColor,
-            disabledContainerColor = containerColor.copy(alpha = 0.5f),
-            disabledContentColor = contentColor.copy(alpha = 0.5f)
-        )
+            // Professional M3 disabled states:
+            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
     ) {
         if (loading) {
             CircularProgressIndicator(
@@ -170,12 +160,14 @@ fun PrimaryButton(
             )
         } else {
             Text(
-                text = text, 
+                text = text,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold // Stronger emphasis for primary actions
+                )
             )
         }
     }
 }
-
 @Composable
 fun ImagePickerBox(
     imageUri: String?,

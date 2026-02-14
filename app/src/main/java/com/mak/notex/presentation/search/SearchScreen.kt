@@ -112,7 +112,10 @@ internal fun SearchScreen(
     modifier: Modifier = Modifier,
     onNavigateToChannel: (String, String) -> Unit
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         Spacer(Modifier.windowInsetsTopHeight(WindowInsets.safeDrawing))
         SearchToolbar(
             onBackClick = onBackClick,

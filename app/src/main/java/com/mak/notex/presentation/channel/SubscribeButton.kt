@@ -3,10 +3,12 @@ package com.mak.notex.presentation.channel
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -26,111 +29,100 @@ fun YouTubeSubscribeButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val scope = rememberCoroutineScope()
     var isAnimating by remember { mutableStateOf(false) }
 
-    // Scale animation for button press
+    // Button scale animation
     val scale by animateFloatAsState(
-        targetValue = if (isAnimating) 0.95f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        targetValue = if (isAnimating) 0.92f else 1f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f),
         label = "scale"
     )
 
-    // Bell icon animation
+    // Bell shake animation
     val bellRotation by animateFloatAsState(
-        targetValue = if (isAnimating && isSubscribed) 30f else 0f,
-        animationSpec = repeatable(
-            iterations = 3,
-            animation = tween(100, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "bell_rotation"
+        targetValue = if (isAnimating && isSubscribed) 15f else 0f,
+        animationSpec = keyframes {
+            durationMillis = 300
+            0f at 0
+            15f at 75
+            -15f at 150
+            15f at 225
+            0f at 300
+        },
+        label = "bell_shake"
     )
 
     Button(
         onClick = {
-            isAnimating = true
-            onClick()
-            // Reset animation after delay
-            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                kotlinx.coroutines.delay(300)
+            scope.launch {
+                isAnimating = true
+                onClick()
+                delay(200)
                 isAnimating = false
             }
         },
         modifier = modifier
             .height(36.dp)
             .scale(scale),
+        // YouTube uses high-contrast Inverse colors for Subscribe
+        // and SurfaceVariant/Tonal colors for Subscribed
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSubscribed) {
-                Color(0xFFF2F2F2)
+                MaterialTheme.colorScheme.surfaceVariant
             } else {
-                Color.Black
+                MaterialTheme.colorScheme.onSurface // Adaptive Black/White
             },
             contentColor = if (isSubscribed) {
-                Color.Black
+                MaterialTheme.colorScheme.onSurfaceVariant
             } else {
-                Color.White
+                MaterialTheme.colorScheme.surface // Adaptive White/Black
             }
         ),
-        shape = RoundedCornerShape(18.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp
-        )
+        shape = CircleShape, // YouTube uses fully rounded corners
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        elevation = ButtonDefaults.buttonElevation(0.dp)
     ) {
         AnimatedContent(
             targetState = isSubscribed,
+            label = "content_fade",
             transitionSpec = {
-                if (targetState) {
-                    // Subscribe -> Subscribed
-                    (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
-                        slideOutHorizontally { width -> -width } + fadeOut()
-                    )
-                } else {
-                    // Subscribed -> Subscribe
-                    (slideInHorizontally { width -> -width } + fadeIn()).togetherWith(
-                        slideOutHorizontally { width -> width } + fadeOut()
-                    )
-                }
-            },
-            label = "button_content"
+                fadeIn(animationSpec = tween(200)) togetherWith
+                        fadeOut(animationSpec = tween(200))
+            }
         ) { targetSubscribed ->
             Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
                 if (targetSubscribed) {
                     Icon(
-                        imageVector = Icons.Default.Notifications,
+                        imageVector = Icons.Default.NotificationsNone,
                         contentDescription = null,
                         modifier = Modifier
-                            .size(20.dp)
-                            .graphicsLayer {
-                                rotationZ = bellRotation
-                            }
+                            .size(18.dp)
+                            .graphicsLayer { rotationZ = bellRotation }
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Subscribed",
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        letterSpacing = 0.sp
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.sp
+                        )
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 } else {
                     Text(
                         text = "Subscribe",
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        letterSpacing = 0.sp
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.sp
+                        )
                     )
                 }
             }

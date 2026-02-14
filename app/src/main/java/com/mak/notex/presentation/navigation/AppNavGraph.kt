@@ -1,6 +1,9 @@
 package com.mak.notex.presentation.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -68,95 +72,83 @@ fun RootNavGraph(
     }
 
     CompositionLocalProvider(LocalSnackbarHostState provides snackbarHostState) {
-        Scaffold(
-            containerColor = Color.Transparent,
+        Surface(
             contentColor = MaterialTheme.colorScheme.onBackground,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            snackbarHost = {
-                SnackbarHost(
-                    snackbarHostState,
-                    modifier = Modifier.windowInsetsPadding(
-                        WindowInsets.safeDrawing.exclude(
-                            WindowInsets.ime,
+            color = MaterialTheme.colorScheme.background
+        ) {
+
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                snackbarHost = {
+                    SnackbarHost(
+                        snackbarHostState,
+                        modifier = Modifier.windowInsetsPadding(
+                            WindowInsets.safeDrawing.exclude(
+                                WindowInsets.ime,
+                            ),
                         ),
-                    ),
-                )
-            },
-            topBar = {
-                if (isMainGraph) {
-                    YootubeTopAppBar(
-                        onNavigateToSearch = {
-                            navController.navigate(Screen.Search.route)
+                    )
+                },
+                topBar = {
+                    if (isMainGraph) {
+                        YootubeTopAppBar(
+                            onNavigateToSearch = {
+                                navController.navigate(Screen.Search.route)
+                            }
+                        )
+                    }
+                },
+                bottomBar = {
+                    if (isMainGraph) {
+                        YootubeBottomAppBar(
+                            currentRoute = currentRoute,
+                            onNavigate = { route ->
+                                navController.navigate(route) {
+                                    // Pop up to the start destination to avoid building up a large stack
+                                    popUpTo(Screen.Home.route) {
+                                        saveState = true
+                                    }
+                                    // Avoid multiple copies of the same destination
+                                    launchSingleTop = true
+                                    // Restore state when reselecting a previously selected item
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                NavHost(
+                    navController = navController,
+                    startDestination = startDestination,
+                    modifier = if (isMainGraph) Modifier.padding(paddingValues) else Modifier,
+                    enterTransition = {
+                        fadeIn(animationSpec = tween(150, easing = FastOutSlowInEasing))
+                    },
+                    exitTransition = {
+                        fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+                    }
+                ) {
+                    authNavGraph(
+                        navController = navController,
+                        onNavigateToMain = {
+                            navController.navigate(NavGraphs.MAIN) {
+                                popUpTo(NavGraphs.AUTH) { inclusive = true }
+                            }
                         }
                     )
-                }
-            },
-            bottomBar = {
-                if (isMainGraph) {
-                    YootubeBottomAppBar(
-                        currentRoute = currentRoute,
-                        onNavigate = { route ->
-                            navController.navigate(route) {
-                                // Pop up to the start destination to avoid building up a large stack
-                                popUpTo(Screen.Home.route) {
-                                    saveState = true
-                                }
-                                // Avoid multiple copies of the same destination
-                                launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
-                                restoreState = true
+
+                    mainNavGraph(
+                        navController = navController,
+                        onNavigateToAuth = {
+                            navController.navigate(NavGraphs.AUTH) {
+                                popUpTo(NavGraphs.MAIN) { inclusive = true }
                             }
                         }
                     )
                 }
-            }
-        ) { paddingValues ->
-            NavHost(
-                navController = navController,
-                startDestination = startDestination,
-                modifier = if (isMainGraph) Modifier.padding(paddingValues) else Modifier,
-                enterTransition = {
-                    slideInHorizontally(
-                        initialOffsetX = { it },
-                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                    ) + fadeIn(animationSpec = tween(300))
-                },
-                exitTransition = {
-                    slideOutHorizontally(
-                        targetOffsetX = { -it },
-                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween(300))
-                },
-                popEnterTransition = {
-                    slideInHorizontally(
-                        initialOffsetX = { -it },
-                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                    ) + fadeIn(animationSpec = tween(300))
-                },
-                popExitTransition = {
-                    slideOutHorizontally(
-                        targetOffsetX = { it },
-                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween(300))
-                }
-            ) {
-                authNavGraph(
-                    navController = navController,
-                    onNavigateToMain = {
-                        navController.navigate(NavGraphs.MAIN) {
-                            popUpTo(NavGraphs.AUTH) { inclusive = true }
-                        }
-                    }
-                )
-
-                mainNavGraph(
-                    navController = navController,
-                    onNavigateToAuth = {
-                        navController.navigate(NavGraphs.AUTH) {
-                            popUpTo(NavGraphs.MAIN) { inclusive = true }
-                        }
-                    }
-                )
             }
         }
     }

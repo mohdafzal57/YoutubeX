@@ -86,6 +86,7 @@ fun SubscriptionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
         when (val state = uiState) {
             is SubscriptionUiState.Loading -> {
