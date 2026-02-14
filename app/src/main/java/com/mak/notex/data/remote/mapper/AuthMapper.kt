@@ -54,9 +54,9 @@ fun SignUpRequest.toMultipart(
             "coverImage",
             onBytesWritten = onBytesWritten
         ),
-        fullName = fullName.toMultipartText(),
-        username = username.toMultipartText(),
-        email = email.toMultipartText(),
-        password = password.toMultipartText()
+        fullName = fullName.toTextRequestBody(),
+        username = username.toTextRequestBody(),
+        email = email.toTextRequestBody(),
+        password = password.toTextRequestBody()
     )
 }

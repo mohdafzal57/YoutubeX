@@ -30,8 +30,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.mak.notex.presentation.common.BottomLoader
 import com.mak.notex.presentation.common.ErrorScreen
+import com.mak.notex.presentation.common.FullScreenLoader
+import com.mak.notex.presentation.common.RetryFooter
 import com.mak.notex.presentation.common.VideoItem
+import com.mak.notex.presentation.common.YTPullToRefreshIndicator
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,67 +71,44 @@ fun HomeScreen(
 //    }
 
 
-    PullToRefreshBox(
+    YTPullToRefreshIndicator(
         isRefreshing = isRefreshing,
-        onRefresh = { videos.refresh() }
+        onRefresh = { videos.refresh() },
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = listState
-            ) {
 
-                items(
-                    count = videos.itemCount,
-                    key = videos.itemKey { it.id }
-                ) { index ->
-                    videos[index]?.let { video ->
-                        VideoItem(
-                            video = video,
-                            onClick = { onPlayVideo(video.videoFile, video.id) },
-                            onNavigateToChannel = {
-                                onNavigateToChannel(
-                                    video.username,
-                                    video.ownerId
-                                )
-                            }
-                        )
-                    }
-                }
-
-                // Append loading state (at the end of the list)
-                when (videos.loadState.append) {
-                    is LoadState.Loading -> {
-                        item { BottomLoader() }
-                    }
-
-                    is LoadState.Error -> {
-                        item {
-                            RetryFooter(
-                                onRetry = {videos.retry()}
+            items(
+                count = videos.itemCount,
+                key = videos.itemKey { it.id }
+            ) { index ->
+                videos[index]?.let { video ->
+                    VideoItem(
+                        video = video,
+                        onClick = { onPlayVideo(video.videoFile, video.id) },
+                        onNavigateToChannel = {
+                            onNavigateToChannel(
+                                video.username,
+                                video.ownerId
                             )
                         }
-                    }
-
-                    else -> {}
+                    )
                 }
             }
 
-            // Refresh state (initial load or manual refresh)
-            when (videos.loadState.refresh) {
+            // Append loading state (at the end of the list)
+            when (videos.loadState.append) {
                 is LoadState.Loading -> {
-                    if (videos.itemCount == 0) {
-                        FullScreenLoader()
-                    }
+                    item { BottomLoader() }
                 }
 
                 is LoadState.Error -> {
-                    if (videos.itemCount == 0) {
-                        ErrorScreen(
-                            message = "Failed to load videos",
+                    item {
+                        RetryFooter(
                             onRetry = { videos.retry() }
                         )
                     }
@@ -136,73 +117,26 @@ fun HomeScreen(
                 else -> {}
             }
         }
-    }
-}
 
+        // Refresh state (initial load or manual refresh)
+        when (videos.loadState.refresh) {
+            is LoadState.Loading -> {
+                if (videos.itemCount == 0) {
+                    FullScreenLoader()
+                }
+            }
 
-@Composable
-fun FullScreenLoader() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    }
-}
+            is LoadState.Error -> {
+                if (videos.itemCount == 0) {
+                    ErrorScreen(
+                        message = "Failed to load videos",
+                        onRetry = { videos.retry() }
+                    )
+                }
+            }
 
-@Composable
-fun BottomLoader(
-    color: Color = MaterialTheme.colorScheme.primary
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            color = color,
-            modifier = Modifier.size(24.dp),
-            strokeWidth = 2.dp
-        )
-    }
-}
-
-@Composable
-fun RetryFooter(
-    onRetry: () -> Unit,
-    textColor: Color = MaterialTheme.colorScheme.error,
-    buttonColor: Color = MaterialTheme.colorScheme.primary
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = "Something went wrong",
-            color = textColor,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Button(
-            onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = buttonColor,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            shape = RoundedCornerShape(100)
-        ) {
-            Text(
-                text = "Retry",
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-            )
+            else -> {}
         }
     }
 }
+

@@ -24,7 +24,7 @@ suspend inline fun <T> safeCall(
                 if (body.data != null) {
                     Result.Success(body.data)
                 } else {
-                    Result.Error(NetworkError.SERVER)
+                    Result.Error(NetworkError.EMPTY_HAND)
                 }
             } else {
                 Result.Error(NetworkError.EMPTY_BODY)

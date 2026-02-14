@@ -3,30 +3,24 @@ package com.mak.notex.presentation.settings
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mak.notex.domain.model.RecentWatched
+import com.mak.notex.domain.model.ChangePasswordRequest
+import com.mak.notex.domain.model.UpdateAccountDetailRequest
 import com.mak.notex.domain.model.User
 import com.mak.notex.domain.repository.UserRepository
 import com.mak.notex.utils.onFailure
 import com.mak.notex.utils.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -136,10 +130,21 @@ class SettingsViewModel @Inject constructor(
 
     private fun updateAccountDetails(fullName: String, email: String) {
         viewModelScope.launch {
+            val request = UpdateAccountDetailRequest(
+                fullName = fullName,
+                email = email
+            )
             _state.update { it.copy(isLoading = true, showEditDialog = false) }
-            userRepository.updateAccountDetails(fullName, email)
+            userRepository.updateAccountDetails(request)
                 .onSuccess { user ->
-                    _state.update { it.copy(userProfile = user.toUserProfileState(), isLoading = false) }
+                    _state.update {
+                        it.copy(
+                            userProfile = _state.value.userProfile?.copy(
+                                fullName = user.fullName, email = user.email
+                            ),
+                            isLoading = false
+                        )
+                    }
                     _events.send(SettingsEvent.ShowMessage("Profile updated"))
                 }
                 .onFailure { error ->
@@ -151,8 +156,16 @@ class SettingsViewModel @Inject constructor(
 
     private fun changePassword(oldPassword: String, newPassword: String) {
         viewModelScope.launch {
+            if (oldPassword.isEmpty() || newPassword.isEmpty()) {
+                _events.send(SettingsEvent.ShowError("Password cannot be empty"))
+                return@launch
+            }
+            val request = ChangePasswordRequest(
+                oldPassword = oldPassword,
+                newPassword = newPassword
+            )
             _state.update { it.copy(isLoading = true, showChangePasswordDialog = false) }
-            userRepository.changePassword(oldPassword, newPassword)
+            userRepository.changePassword(request)
                 .onSuccess {
                     _state.update { it.copy(isLoading = false) }
                     _events.send(SettingsEvent.ShowMessage("Password changed"))

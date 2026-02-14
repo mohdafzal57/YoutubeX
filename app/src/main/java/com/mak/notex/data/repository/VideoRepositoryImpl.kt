@@ -10,7 +10,7 @@ import com.mak.notex.data.paging.VideoFeedPagingSource
 import com.mak.notex.data.remote.api.VideoApi
 import com.mak.notex.data.remote.mapper.toCompressedMultipart
 import com.mak.notex.data.remote.mapper.toDomain
-import com.mak.notex.data.remote.mapper.toMultipartText
+import com.mak.notex.data.remote.mapper.toTextRequestBody
 import com.mak.notex.data.remote.mapper.toVideoMultipart
 import com.mak.notex.domain.model.UserVideo
 import com.mak.notex.domain.model.UserVideoRequest
@@ -40,8 +40,8 @@ class VideoRepositoryImpl @Inject constructor(
             videoApi.publishAVideo(
                 videoFile = request.videoFile.toVideoMultipart(contentResolver, "videoFile"),
                 thumbnail = request.thumbnail.toCompressedMultipart(contentResolver, "thumbnail"),
-                title = request.title.toMultipartText(),
-                description = request.description.toMultipartText()
+                title = request.title.toTextRequestBody(),
+                description = request.description.toTextRequestBody()
             )
         }.map { it.toDomain() }
     }

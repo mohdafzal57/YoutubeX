@@ -1,9 +1,7 @@
 package com.mak.notex.data.remote.mapper
 
-import com.mak.notex.data.remote.dto.video.UserVideoDto
 import com.mak.notex.data.remote.dto.video.VideoDto
 import com.mak.notex.data.remote.dto.video.VideoFeedDto
-import com.mak.notex.domain.model.UserVideo
 import com.mak.notex.domain.model.Video
 import com.mak.notex.domain.model.VideoFeed
 

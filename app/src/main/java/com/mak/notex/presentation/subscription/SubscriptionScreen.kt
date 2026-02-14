@@ -1,6 +1,5 @@
 package com.mak.notex.presentation.subscription
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,19 +22,13 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.PersonRemove
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.pullToRefreshIndicator
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,14 +40,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.google.common.math.LinearTransformation.vertical
+import com.mak.notex.presentation.common.FullScreenLoader
+import com.mak.notex.presentation.common.YTPullToRefreshIndicator
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,9 +83,7 @@ fun SubscriptionScreen(
     ) {
         when (val state = uiState) {
             is SubscriptionUiState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                FullScreenLoader()
             }
 
             is SubscriptionUiState.Error -> {
@@ -106,11 +97,10 @@ fun SubscriptionScreen(
                 if (state.subscriptions.isEmpty()) {
                     EmptyScreen()
                 } else {
-                    PullToRefreshBox(
+                    YTPullToRefreshIndicator(
                         isRefreshing = state.isRefreshing,
-                        onRefresh = viewModel::refreshSubscriptions,
+                        onRefresh = viewModel::refreshSubscriptions
                     ) {
-
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(vertical = 8.dp)
@@ -147,6 +137,7 @@ fun SubscriptionScreen(
         )
     }
 }
+
 // --- List Item ---
 @Composable
 fun SubscriptionItemRow(

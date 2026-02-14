@@ -4,6 +4,8 @@ import com.mak.notex.data.remote.dto.ApiResponse
 import com.mak.notex.data.remote.dto.PaginatedResponseDto
 import com.mak.notex.data.remote.dto.SignInRequestDto
 import com.mak.notex.data.remote.dto.SignInResponseDto
+import com.mak.notex.data.remote.dto.user.ChangePasswordRequestDto
+import com.mak.notex.data.remote.dto.user.UpdateAccountDetailRequestDto
 import com.mak.notex.data.remote.dto.user.UserChannelDto
 import com.mak.notex.data.remote.dto.user.UserDto
 import com.mak.notex.data.remote.dto.user.WatchHistoryDto
@@ -57,14 +59,12 @@ interface UserApi {
 
     @PATCH("users/update-account")
     suspend fun updateAccountDetails(
-        @Body fullName: RequestBody,
-        @Body email: RequestBody
+        @Body request: UpdateAccountDetailRequestDto
     ): Response<ApiResponse<UserDto>>
 
     @POST("users/change-password")
     suspend fun changePassword(
-        @Body oldPassword: RequestBody,
-        @Body newPassword: RequestBody
+        @Body request: ChangePasswordRequestDto
     ): Response<ApiResponse<Unit>>
 
     @GET("users/c/{username}")

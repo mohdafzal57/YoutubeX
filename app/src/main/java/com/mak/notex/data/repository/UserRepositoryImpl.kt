@@ -11,16 +11,16 @@ import androidx.paging.map
 import com.mak.notex.core.datastore.TokenManager
 import com.mak.notex.data.paging.WatchHistoryPagingSource
 import com.mak.notex.data.remote.api.UserApi
-import com.mak.notex.data.remote.dto.user.UserDto
 import com.mak.notex.data.remote.mapper.ProgressRequestBody
 import com.mak.notex.data.remote.mapper.toCompressedMultipart
 import com.mak.notex.data.remote.mapper.toDomain
-import com.mak.notex.data.remote.mapper.toMultipartText
+import com.mak.notex.data.remote.mapper.toTextRequestBody
 import com.mak.notex.data.remote.mapper.toDto
-import com.mak.notex.data.remote.mapper.toMultipart
+import com.mak.notex.domain.model.ChangePasswordRequest
 import com.mak.notex.domain.model.SignInRequest
 import com.mak.notex.domain.model.SignInResponse
 import com.mak.notex.domain.model.SignUpRequest
+import com.mak.notex.domain.model.UpdateAccountDetailRequest
 import com.mak.notex.domain.model.User
 import com.mak.notex.domain.model.UserChannel
 import com.mak.notex.domain.model.WatchHistoryItem
@@ -130,10 +130,10 @@ class UserRepositoryImpl @Inject constructor(
             userApi.signUp(
                 avatar = avatarPart,
                 coverImage = coverPart,
-                fullName = request.fullName.toMultipartText(),
-                username = request.username.toMultipartText(),
-                email = request.email.toMultipartText(),
-                password = request.password.toMultipartText()
+                fullName = request.fullName.toTextRequestBody(),
+                username = request.username.toTextRequestBody(),
+                email = request.email.toTextRequestBody(),
+                password = request.password.toTextRequestBody()
             )
         }.map { it.toDomain() }
     }
@@ -198,27 +198,19 @@ class UserRepositoryImpl @Inject constructor(
 
     override
     suspend fun updateAccountDetails(
-        fullName: String,
-        email: String
+        request: UpdateAccountDetailRequest
     ): Result<User, NetworkError> {
         return safeCall {
-            userApi.updateAccountDetails(
-                fullName = fullName.toMultipartText(),
-                email = email.toMultipartText()
-            )
+            userApi.updateAccountDetails(request.toDto())
         }.map { it.toDomain() }
     }
 
     override
     suspend fun changePassword(
-        oldPassword: String,
-        newPassword: String
+        request: ChangePasswordRequest
     ): Result<Unit, NetworkError> {
         return safeCall {
-            userApi.changePassword(
-                oldPassword = oldPassword.toMultipartText(),
-                newPassword = newPassword.toMultipartText()
-            )
+            userApi.changePassword(request.toDto())
         }
     }
 }

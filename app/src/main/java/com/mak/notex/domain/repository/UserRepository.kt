@@ -4,9 +4,11 @@ import android.net.Uri
 import androidx.paging.PagingData
 import com.mak.notex.data.remote.dto.SignInResponseDto
 import com.mak.notex.data.remote.dto.user.UserDto
+import com.mak.notex.domain.model.ChangePasswordRequest
 import com.mak.notex.domain.model.SignInRequest
 import com.mak.notex.domain.model.SignInResponse
 import com.mak.notex.domain.model.SignUpRequest
+import com.mak.notex.domain.model.UpdateAccountDetailRequest
 import com.mak.notex.domain.model.User
 import com.mak.notex.domain.model.UserChannel
 import com.mak.notex.domain.model.WatchHistoryItem
@@ -33,12 +35,10 @@ interface UserRepository {
     suspend fun updateCoverImage(coverUri: Uri): Result<String, NetworkError>
 
     suspend fun updateAccountDetails(
-        fullName: String,
-        email: String
+        request: UpdateAccountDetailRequest
     ): Result<User, NetworkError>
 
     suspend fun changePassword(
-        oldPassword: String,
-        newPassword: String
+        request: ChangePasswordRequest
     ): Result<Unit, NetworkError>
 }

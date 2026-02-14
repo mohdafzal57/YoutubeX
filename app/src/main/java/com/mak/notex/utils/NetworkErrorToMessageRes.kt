@@ -13,6 +13,7 @@ fun NetworkError.asStringRes(): Int {
         NetworkError.SERVER -> R.string.error_server
         NetworkError.SERIALIZATION -> R.string.error_serialization
         NetworkError.EMPTY_BODY -> R.string.error_empty_body
+        NetworkError.EMPTY_HAND -> R.string.error_empty_hand
         NetworkError.UNKNOWN -> R.string.error_unknown
     }
 }

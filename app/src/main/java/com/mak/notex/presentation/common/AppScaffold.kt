@@ -3,6 +3,7 @@ package com.mak.notex.presentation.common
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,7 +44,7 @@ fun AppScaffold(
                     if (showBackButton) {
                         IconButton(onClick = onBackClick) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
@@ -67,19 +68,6 @@ fun AppScaffold(
         content = content
     )
 }
-// shared/components/LoadingScreen.kt
-@Composable
-fun LoadingScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
 // shared/components/ErrorScreen.kt
 @Composable
 fun ErrorScreen(

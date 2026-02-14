@@ -8,5 +8,6 @@ enum class NetworkError : Error {
     SERVER,
     SERIALIZATION,
     EMPTY_BODY,
+    EMPTY_HAND,
     UNKNOWN
 }

@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -51,18 +50,18 @@ import coil.compose.AsyncImage
 import com.mak.notex.domain.model.UserChannel
 import com.mak.notex.domain.model.UserVideo
 import com.mak.notex.presentation.common.AppScaffold
-import com.mak.notex.presentation.common.LoadingScreen
+import com.mak.notex.presentation.common.BottomLoader
+import com.mak.notex.presentation.common.FullScreenLoader
+import com.mak.notex.presentation.common.RetryFooter
 import com.mak.notex.presentation.common.formatDuration
-import com.mak.notex.presentation.home.BottomLoader
-import com.mak.notex.presentation.home.RetryFooter
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
 import com.mak.notex.presentation.subscription.NotificationSettingsSheet
 
 @Composable
-fun ChannelDetailsScreen(
-    viewModel: ChannelDetailViewModel = hiltViewModel(),
+fun ChannelScreen(
     onNavigateBack: () -> Unit,
     onPlayVideo: (String, String) -> Unit,
+    viewModel: ChannelViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = LocalSnackbarHostState.current
@@ -70,13 +69,13 @@ fun ChannelDetailsScreen(
     val videos = viewModel.videos.collectAsLazyPagingItems()
 
     LaunchedEffect(Unit) {
-        viewModel.effect.collect {
+        viewModel.events.collect {
             when (it) {
-                is ChannelEffect.ShowError -> {
+                is ChannelEvent.ShowError -> {
                     snackbarHostState.showSnackbar(it.message)
                 }
 
-                ChannelEffect.SubscriptionUpdated -> {
+                ChannelEvent.SubscriptionUpdated -> {
                     snackbarHostState.showSnackbar("Subscription updated")
                 }
             }
@@ -95,7 +94,7 @@ fun ChannelDetailsScreen(
         ) { paddingValues ->
 
             if (uiState.isLoading) {
-                LoadingScreen()
+                FullScreenLoader()
                 return@AppScaffold
 
             } else if (uiState.profile != null) {
@@ -103,13 +102,12 @@ fun ChannelDetailsScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(paddingValues)
                         .background(MaterialTheme.colorScheme.background),
-                    // Removed top paddingValues from here if you want the banner to touch the top bar
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     item {
                         // --- 1. Banner with Rounded Corners ---
-                        // The image in the screenshot has a slight margin and rounded corners
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()

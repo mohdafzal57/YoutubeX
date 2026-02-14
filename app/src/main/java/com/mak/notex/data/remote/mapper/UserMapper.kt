@@ -110,7 +110,7 @@ fun WatchHistoryItem.toDto(): WatchHistoryDto {
     )
 }
 
-fun String.toMultipartText(): RequestBody =
+fun String.toTextRequestBody(): RequestBody =
     this.toRequestBody("text/plain".toMediaType())
 
 fun File.toMultipartImage(fieldName: String): MultipartBody.Part {val requestFile = this.asRequestBody("image/*".toMediaType())

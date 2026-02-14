@@ -2,7 +2,6 @@ package com.mak.notex.presentation.navigation
 
 import com.mak.notex.presentation.subscription.SubscriptionScreen
 import android.net.Uri
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -11,21 +10,18 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.mak.notex.presentation.channel.ChannelDetailsScreen
+import com.mak.notex.presentation.channel.ChannelScreen
 import com.mak.notex.presentation.home.HomeScreen
 import com.mak.notex.presentation.player.PlayerScreen
 import com.mak.notex.presentation.player.PlayerViewModel
 import com.mak.notex.presentation.search.SearchScreen
 import com.mak.notex.presentation.settings.SettingsScreen
-import com.mak.notex.presentation.settings.SettingsViewModel
 import com.mak.notex.presentation.tweet.CreateTweetScreen
 import com.mak.notex.presentation.upload_video.UploadScreen
 import com.mak.notex.presentation.upload_video.UploadVideoDetailScreen
@@ -133,7 +129,7 @@ fun NavGraphBuilder.mainNavGraph(
                 navArgument("ownerId") { type = NavType.StringType }
             )
         ) {
-            ChannelDetailsScreen(
+            ChannelScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onPlayVideo = { videoUrl, videoId ->
                     navController.navigate(Screen.Player.createRoute(videoUrl, videoId))

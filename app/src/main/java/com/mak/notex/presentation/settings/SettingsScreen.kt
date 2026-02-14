@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mak.notex.presentation.common.LoadingScreen
+import com.mak.notex.presentation.common.FullScreenLoader
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
 
 @Composable
@@ -68,10 +68,7 @@ fun SettingsScreen(
     ) {
         when {
             state.isLoading && state.userProfile == null -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
+                FullScreenLoader()
             }
 
             state.error != null && state.userProfile == null -> {
@@ -93,17 +90,6 @@ fun SettingsScreen(
                     onChangePassword = { viewModel.handleIntent(SettingsIntent.ShowChangePasswordDialog) },
                     onLogout = { viewModel.handleIntent(SettingsIntent.Logout) }
                 )
-            }
-        }
-
-        if (state.isLoading && state.userProfile != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         }
 

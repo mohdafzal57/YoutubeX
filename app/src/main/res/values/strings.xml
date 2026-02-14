@@ -40,5 +40,6 @@
     <string name="already_have_account">Already have an account?</string>
     <string name="sign_in">Sign In</string>
     <string name="uploading">Uploading…</string>
+    <string name="error_empty_hand">I am successfull but with no data for real.</string>
 
 </resources>

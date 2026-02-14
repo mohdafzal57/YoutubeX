@@ -11,6 +11,7 @@ import com.mak.notex.domain.model.UserVideoRequest
 import com.mak.notex.domain.repository.SubscriptionRepository
 import com.mak.notex.domain.repository.UserRepository
 import com.mak.notex.domain.repository.VideoRepository
+import com.mak.notex.utils.NetworkError
 import com.mak.notex.utils.onFailure
 import com.mak.notex.utils.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +28,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class ChannelDetailViewModel @Inject constructor(
+class ChannelViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val videoRepository: VideoRepository,
     private val userRepository: UserRepository,
@@ -36,19 +37,21 @@ class ChannelDetailViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ChannelProfileState())
     val uiState: StateFlow<ChannelProfileState> = _uiState.asStateFlow()
-    private val _effect = Channel<ChannelEffect>()
-    val effect = _effect.receiveAsFlow()
+    private val _events = Channel<ChannelEvent>()
+    val events = _events.receiveAsFlow()
+
+    private val username: String = savedStateHandle["username"] ?: ""
+    private val ownerId: String = savedStateHandle["ownerId"] ?: ""
 
     // 1. Keep track of params in a StateFlow
     private val _videoParams = MutableStateFlow(
         UserVideoState(
-            userId = savedStateHandle["ownerId"] ?: "",
+            ownerId = ownerId,
             sortBy = "createdAt",
             sortType = SortType.LATEST.value // "desc"
         )
     )
 
-    private val username: String = savedStateHandle["username"] ?: ""
 
     // 2. Use flatMapLatest to react to param changes
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -56,7 +59,7 @@ class ChannelDetailViewModel @Inject constructor(
         .flatMapLatest { params ->
             videoRepository.getUserVideos(
                 UserVideoRequest(
-                    userId = params.userId,
+                    userId = params.ownerId,
                     query = params.query,
                     sortBy = params.sortBy,
                     sortType = params.sortType // Ensure your request DTO supports this
@@ -97,7 +100,7 @@ class ChannelDetailViewModel @Inject constructor(
                 }
                 .onFailure { message ->
                     _uiState.update { it.copy(isLoading = false) }
-                    _effect.trySend(ChannelEffect.ShowError(message.toString()))
+                    _events.trySend(ChannelEvent.ShowError(message.toString()))
                 }
         }
     }
@@ -112,10 +115,12 @@ class ChannelDetailViewModel @Inject constructor(
             subscriptionRepository.toggleSubscription(currentState.profile.id)
                 .onSuccess {
 //                    _uiState.update { it.copy(isSubscribed = !currentState.isSubscribed) }
-                    _effect.trySend(ChannelEffect.SubscriptionUpdated)
+                    _events.trySend(ChannelEvent.SubscriptionUpdated)
                 }
                 .onFailure { message ->
-                    _effect.trySend(ChannelEffect.ShowError(message.toString()))
+                    if (message == NetworkError.EMPTY_HAND) return@onFailure
+                    _uiState.update { it.copy(isSubscribed = currentState.isSubscribed) }
+                    _events.trySend(ChannelEvent.ShowError(message.toString()))
                 }
         }
     }
@@ -134,13 +139,13 @@ sealed interface ChannelIntent {
     data class OrderType(val sortType: SortType) : ChannelIntent
 }
 
-sealed interface ChannelEffect {
-    data class ShowError(val message: String) : ChannelEffect
-    object SubscriptionUpdated : ChannelEffect
+sealed interface ChannelEvent {
+    data class ShowError(val message: String) : ChannelEvent
+    object SubscriptionUpdated : ChannelEvent
 }
 
 data class UserVideoState(
-    val userId: String = "",
+    val ownerId: String = "",
     val query: String = "",
     val sortBy: String = "createdAt",
     val sortType: String = "desc"
