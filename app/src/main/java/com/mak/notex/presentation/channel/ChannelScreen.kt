@@ -126,57 +126,7 @@ fun ChannelScreen(
                     }
 
                     item {
-                        val profile = uiState.profile!!
-                        // --- 2. Channel Info Row ---
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Avatar with a specific background color for that "circular frame" look
-                            AsyncImage(
-                                model = profile.avatar,
-                                contentDescription = "Profile Picture",
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF0F1B1B)), // Darker tint often seen behind logos
-                                contentScale = ContentScale.Crop
-                            )
-
-                            Spacer(modifier = Modifier.width(16.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                // Channel Name (Bold & Large)
-                                Text(
-                                    text = profile.username,
-                                    style = MaterialTheme.typography.headlineSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 22.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-
-                                // Handle / Username
-                                Text(
-                                    text = "@${profile.fullName.lowercase().replace(" ", "")}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(top = 2.dp)
-                                )
-
-                                // Subscriber and Video count metadata
-                                Text(
-                                    text = "${profile.subscribersCount} subscribers • ${/*profile.videosCount ?: 0*/ 5} videos",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(top = 2.dp)
-                                )
-                            }
-                        }
+                        ChannelHeaderSection(uiState.profile!!)
                     }
 
 
@@ -250,7 +200,55 @@ fun ChannelHeaderSection(
     profile: UserChannel,
     modifier: Modifier = Modifier
 ) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Avatar with a specific background color for that "circular frame" look
+        AsyncImage(
+            model = profile.avatar,
+            contentDescription = "Profile Picture",
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF0F1B1B)), // Darker tint often seen behind logos
+            contentScale = ContentScale.Crop
+        )
 
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            // Channel Name (Bold & Large)
+            Text(
+                text = profile.username,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            // Handle / Username
+            Text(
+                text = "@${profile.fullName.lowercase().replace(" ", "")}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+
+            // Subscriber and Video count metadata
+            Text(
+                text = "${profile.subscribersCount} subscribers • ${profile.videosCount} videos",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+    }
 }
 
 @Composable

@@ -55,11 +55,7 @@ fun RootNavGraph(
 
     // Check if we're in main graph
     val isMainGraph = currentRoute?.let { route ->
-        route == Screen.Home.route ||
-                route == Screen.Settings.route ||
-                route == Screen.CreateTweet.route ||
-                route == Screen.UploadVideo.route ||
-                route == Screen.Subscription.route
+        route in TOP_LEVEL_DESTINATIONS
     } ?: false
 
     LaunchedEffect(isOffline) {

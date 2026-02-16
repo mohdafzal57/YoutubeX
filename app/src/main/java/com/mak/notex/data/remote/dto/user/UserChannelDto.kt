@@ -13,5 +13,6 @@ data class UserChannelDto(
     val isUserSubscribed: Boolean,
     val subscribeToCount: Int,
     val subscribersCount: Int,
+    val videosCount: Int,
     val username: String
 )

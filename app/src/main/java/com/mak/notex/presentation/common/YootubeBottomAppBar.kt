@@ -30,7 +30,7 @@ fun YootubeBottomAppBar(
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
-    val items = listOf(
+    val bottomNavigationItems = listOf(
         BottomNavigationItem(
             title = "Home",
             selectedIcon = Icons.Filled.Home,
@@ -61,7 +61,7 @@ fun YootubeBottomAppBar(
         modifier = modifier,
         containerColor = YTNavigationDefaults.containerColor()
     ) {
-        items.forEach { item ->
+        bottomNavigationItems.forEach { item ->
             val isSelected = currentRoute == item.route
 
             NavigationBarItem(

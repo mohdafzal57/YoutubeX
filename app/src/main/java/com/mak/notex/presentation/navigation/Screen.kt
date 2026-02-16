@@ -23,3 +23,9 @@ sealed class Screen(val route: String) {
         }
     }
 }
+
+val TOP_LEVEL_DESTINATIONS = setOf(
+    Screen.Home.route,
+    Screen.Settings.route,
+    Screen.Subscription.route
+)

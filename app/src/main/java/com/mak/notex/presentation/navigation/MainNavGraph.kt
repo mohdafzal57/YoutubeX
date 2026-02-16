@@ -75,7 +75,8 @@ fun NavGraphBuilder.mainNavGraph(
                 navigateToUploadDetail = { uri ->
                     val encodedUri = Uri.encode(uri.toString())
                     navController.navigate(Screen.UploadVideoDetailScreen.route + "/${encodedUri}")
-                }
+                },
+                onBackClick = { navController.popBackStack() }
             )
         }
 

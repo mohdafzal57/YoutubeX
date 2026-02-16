@@ -15,6 +15,9 @@ fun NetworkError.asStringRes(): Int {
         NetworkError.EMPTY_BODY -> R.string.error_empty_body
         NetworkError.EMPTY_HAND -> R.string.error_empty_hand
         NetworkError.UNKNOWN -> R.string.error_unknown
+        NetworkError.FORBIDDEN -> R.string.error_forbidden
+        NetworkError.NOT_FOUND -> R.string.error_not_found
+        NetworkError.CLIENT -> R.string.error_client
     }
 }
 

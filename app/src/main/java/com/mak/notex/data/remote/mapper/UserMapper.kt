@@ -68,6 +68,7 @@ fun UserChannelDto.toDomain() = UserChannel(
     coverImage = coverImage,
     subscribersCount = subscribersCount,
     subscribeToCount = subscribeToCount,
+    videosCount = videosCount,
     isUserSubscribed = isUserSubscribed
 )
 
@@ -80,6 +81,7 @@ fun UserChannel.toDto() = UserChannelDto(
     coverImage = coverImage ?: "",
     subscribersCount = subscribersCount,
     subscribeToCount = subscribeToCount,
+    videosCount = videosCount,
     isUserSubscribed = isUserSubscribed
 )
 

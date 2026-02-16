@@ -9,5 +9,8 @@ enum class NetworkError : Error {
     SERIALIZATION,
     EMPTY_BODY,
     EMPTY_HAND,
-    UNKNOWN
+    UNKNOWN,
+    FORBIDDEN,
+    NOT_FOUND,
+    CLIENT
 }

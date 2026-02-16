@@ -9,7 +9,8 @@ data class UserChannel(
     val coverImage: String?,
     val subscribersCount: Int,
     val subscribeToCount: Int,
-    val isUserSubscribed: Boolean
+    val videosCount: Int,
+    val isUserSubscribed: Boolean,
 )
 
 data class WatchHistoryItem(

@@ -41,5 +41,8 @@
     <string name="sign_in">Sign In</string>
     <string name="uploading">Uploading…</string>
     <string name="error_empty_hand">I am successfull but with no data for real.</string>
+    <string name="error_forbidden">You don\'t have permission.</string>
+    <string name="error_client">Something is wrong with your request</string>
+    <string name="error_not_found">Resource not found</string>
 
 </resources>
