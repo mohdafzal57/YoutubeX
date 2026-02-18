@@ -1,5 +1,6 @@
 package com.mak.notex.presentation.channel
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,7 +55,8 @@ import com.mak.notex.presentation.common.AppScaffold
 import com.mak.notex.presentation.common.BottomLoader
 import com.mak.notex.presentation.common.FullScreenLoader
 import com.mak.notex.presentation.common.RetryFooter
-import com.mak.notex.presentation.common.formatDuration
+import com.mak.notex.presentation.common.ShareVideoButton
+import com.mak.notex.utils.formatDuration
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
 import com.mak.notex.presentation.subscription.NotificationSettingsSheet
 
@@ -356,7 +359,7 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
                     .padding(6.dp)
             ) {
                 Text(
-                    text = formatDuration(video.duration),
+                    text = video.duration,
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
@@ -392,31 +395,13 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
 
             // Views and Time
             Text(
-                text = "${formatViews(video.views)} • ${video.createdAt}",
+                text = "${video.views} • ${video.createdAt}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
         // --- 3. More Options Menu ---
-        IconButton(
-            onClick = { /* Handle click */ },
-            modifier = Modifier.size(24.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "Options",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-fun formatViews(count: Int): String {
-    return when {
-        count >= 1_000_000 -> "${count / 1_000_000.0}M views"
-        count >= 100_000 -> "${count / 100_000.0} lakh views"
-        count >= 1_000 -> "${count / 1_000}K views"
-        else -> "$count views"
+        ShareVideoButton(video.videoFile)
     }
 }

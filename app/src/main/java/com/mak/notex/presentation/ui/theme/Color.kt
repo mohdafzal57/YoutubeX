@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 // --- Brand Colors ---
 val YouTubeRed = Color(0xFFFF0000)
 val YouTubeBlue = Color(0xFF3EA6FF)
+val AccentColor = Color(0xFF1D9BF0)
 
 // --- Dark Palette (Industry Standard for Video Apps) ---
 val DarkBackground = Color(0xFF0F0F0F)

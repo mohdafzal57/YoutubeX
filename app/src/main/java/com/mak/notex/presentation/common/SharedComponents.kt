@@ -1,6 +1,7 @@
 package com.mak.notex.presentation.common
 
 import android.R.attr.singleLine
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -166,6 +168,30 @@ fun PrimaryButton(
                 )
             )
         }
+    }
+}
+
+@Composable
+fun ShareVideoButton(videoUrl: String) {
+    val context = LocalContext.current
+
+    IconButton(
+        onClick = {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, videoUrl)
+            }
+
+            val chooser = Intent.createChooser(shareIntent, "Share video via")
+            context.startActivity(chooser)
+        },
+        modifier = Modifier.size(24.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = "Share Video",
+            tint = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 @Composable

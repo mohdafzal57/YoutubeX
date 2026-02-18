@@ -23,6 +23,7 @@ import com.mak.notex.presentation.player.PlayerViewModel
 import com.mak.notex.presentation.search.SearchScreen
 import com.mak.notex.presentation.settings.SettingsScreen
 import com.mak.notex.presentation.tweet.CreateTweetScreen
+import com.mak.notex.presentation.ui.theme.NoteXTheme
 import com.mak.notex.presentation.upload_video.UploadScreen
 import com.mak.notex.presentation.upload_video.UploadVideoDetailScreen
 import java.net.URLDecoder

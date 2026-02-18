@@ -4,6 +4,9 @@ import com.mak.notex.data.remote.dto.video.VideoDto
 import com.mak.notex.data.remote.dto.video.VideoFeedDto
 import com.mak.notex.domain.model.Video
 import com.mak.notex.domain.model.VideoFeed
+import com.mak.notex.utils.formatDate
+import com.mak.notex.utils.formatDuration
+import com.mak.notex.utils.formatLikesCount
 
 fun VideoDto.toDomain(): Video {
     return Video(
@@ -26,15 +29,15 @@ fun VideoFeedDto.toDomain(): VideoFeed {
         thumbnail = thumbnail,
         title = title,
         description = description,
-        duration = duration,
+        duration = formatDuration(duration),
         views = views,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        likesCount = likesCount,
+        likesCount = formatLikesCount(likesCount),
         isLikedByMe = isLikedByMe,
         username = username,
         avatar = avatar,
-        ownerId = ownerId
+        ownerId = ownerId,
+        updatedAt = formatDate(updatedAt),
+        createdAt = formatDate(createdAt),
     )
 }
 

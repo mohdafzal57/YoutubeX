@@ -35,27 +35,6 @@ import coil.request.ImageRequest
 import com.mak.notex.domain.model.VideoFeed
 import java.util.Locale
 
-internal fun formatDuration(duration: Double): String {
-    val seconds = duration.toInt()
-    val minutes = seconds / 60
-    val remainingSeconds = seconds % 60
-    return if (minutes >= 60) {
-        val hours = minutes / 60
-        val remainingMinutes = minutes % 60
-        String.format("%d:%02d:%02d", hours, remainingMinutes, remainingSeconds)
-    } else {
-        String.format("%02d:%02d", minutes, remainingSeconds)
-    }
-}
-
-private fun formatLikesCount(count: Int): String {
-    return when {
-        count >= 100_000_000 -> "${(count / 1_000_000)}M"
-        count >= 100_000 -> String.format(Locale.US, "%.1f lakh", count / 100_000.0)
-        count >= 1_000 -> String.format(Locale.US, "%.1fK", count / 1000.0)
-        else -> count.toString()
-    }
-}
 
 
 @Composable
@@ -83,7 +62,7 @@ fun VideoItem(
             )
 
             Text(
-                text = formatDuration(video.duration),
+                text = video.duration,
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier
@@ -132,7 +111,7 @@ fun VideoItem(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${video.username} • ${formatLikesCount(video.likesCount)} views • 10 hours ago",
+                    text = "${video.username} • ${video.likesCount} views • ${video.createdAt}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -140,16 +119,7 @@ fun VideoItem(
                 )
             }
 
-            IconButton(
-                onClick = { /* TODO */ },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "More options",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            ShareVideoButton(videoUrl = video.videoFile)
         }
     }
 }

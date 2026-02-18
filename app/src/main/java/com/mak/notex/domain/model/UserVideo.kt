@@ -9,7 +9,7 @@ data class UserVideo(
     val thumbnail: String,
     val title: String,
     val description: String,
-    val duration: Double,
+    val duration: String,
     val views: Int,
     val isPublished: Boolean,
     val createdAt: String,

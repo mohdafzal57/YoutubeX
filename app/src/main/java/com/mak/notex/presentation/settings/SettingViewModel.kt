@@ -7,6 +7,7 @@ import com.mak.notex.domain.model.ChangePasswordRequest
 import com.mak.notex.domain.model.UpdateAccountDetailRequest
 import com.mak.notex.domain.model.User
 import com.mak.notex.domain.repository.UserRepository
+import com.mak.notex.utils.formatDate
 import com.mak.notex.utils.onFailure
 import com.mak.notex.utils.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -237,15 +238,3 @@ fun User.toUserProfileState() = UserProfileState(
     username = username,
     createdAt = formatDate(createdAt)
 )
-
-private fun formatDate(dateString: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-        inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-        val date = inputFormat.parse(dateString)
-        val outputFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-        date?.let { outputFormat.format(it) } ?: dateString
-    } catch (e: Exception) {
-        dateString
-    }
-}

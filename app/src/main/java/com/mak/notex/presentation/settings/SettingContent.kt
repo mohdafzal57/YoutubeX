@@ -563,11 +563,11 @@ fun SettingsContent(
                         .align(Alignment.TopEnd)
                         .padding(10.dp)
                         .background(
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
                             CircleShape
                         )
-                        .padding(6.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                            .padding(6.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -591,7 +591,7 @@ fun SettingsContent(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(Color(0xFF0F1B1B))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = ripple(bounded = true),
@@ -607,11 +607,11 @@ fun SettingsContent(
                             .align(Alignment.BottomEnd)
                             .size(28.dp)
                             .background(
-                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primaryContainer,
                                 CircleShape
                             )
                             .padding(6.dp),
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
 
