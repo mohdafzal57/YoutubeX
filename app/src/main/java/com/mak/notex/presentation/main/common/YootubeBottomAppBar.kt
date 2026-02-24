@@ -72,14 +72,14 @@ fun YootubeBottomAppBar(
         )
     )
 
-    ShortNavigationBar(
+    NavigationBar(
         modifier = modifier,
         containerColor = YTNavigationDefaults.containerColor()
     ) {
         bottomNavigationItems.forEach { item ->
             val isSelected = currentRoute?.startsWith(item.route) == true
             val context = LocalContext.current
-            ShortNavigationBarItem(
+            NavigationBarItem(
                 selected = isSelected,
                 onClick = {
                     if (item.route == Screen.Short.route) {
@@ -123,11 +123,12 @@ fun YootubeBottomAppBar(
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
                     )
                 },
-                colors = ShortNavigationBarItemDefaults.colors(
+                colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = YTNavigationDefaults.selectedItemColor(),
                     unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
                     selectedTextColor = YTNavigationDefaults.selectedItemColor(),
                     unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
+                    indicatorColor = YTNavigationDefaults.indicatorColor()
                 )
             )
         }
