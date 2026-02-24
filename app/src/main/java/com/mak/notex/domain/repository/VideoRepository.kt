@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface VideoRepository {
 
-    suspend fun uploadVideo(request: VideoUploadRequest): Result<Video, NetworkError>
+    suspend fun uploadVideo(request: VideoUploadRequest): Result<Unit, NetworkError>
 
     fun getUserVideos(
         userVideoRequest: UserVideoRequest

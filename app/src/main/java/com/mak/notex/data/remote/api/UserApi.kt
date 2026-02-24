@@ -76,6 +76,5 @@ interface UserApi {
     suspend fun getWatchHistory(
         @Query("page") page: Int,
         @Query("limit") limit: Int
-    ):
-            Response<ApiResponse<PaginatedResponseDto<WatchHistoryDto>>>
+    ): Response<ApiResponse<PaginatedResponseDto<WatchHistoryDto>>>
 }

@@ -2,6 +2,7 @@ package com.mak.notex.presentation.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mak.notex.core.datastore.JwtTokenManager
 import com.mak.notex.core.datastore.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -12,16 +13,27 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val tokenManager: TokenManager
+    private val tokenManager: JwtTokenManager
 ) : ViewModel() {
 
-    val isLoggedIn: StateFlow<Boolean?> =
+    val authState: StateFlow<AuthState> =
         tokenManager.getAccessJwt()
-            .map { !it.isNullOrBlank() }
+            .map { token ->
+                if (token.isNullOrBlank()) {
+                    AuthState.Unauthenticated
+                } else {
+                    AuthState.Authenticated
+                }
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = null
+                initialValue = AuthState.Loading
             )
+}
 
+sealed class AuthState {
+    object Loading : AuthState()
+    object Authenticated: AuthState()
+    object Unauthenticated: AuthState()
 }

@@ -5,14 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.mak.notex.presentation.auth.AuthState
 import com.mak.notex.presentation.auth.AuthViewModel
-import com.mak.notex.presentation.navigation.NavGraphs
-import com.mak.notex.presentation.navigation.RootNavGraph
+import com.mak.notex.presentation.navigation.RootNavHost
 import com.mak.notex.presentation.ui.theme.NoteXTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -20,36 +21,52 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
+    private val connectivityViewModel: ConnectivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // Keep the splash screen on-screen until we know the auth state
-        splashScreen.setKeepOnScreenCondition {
-            authViewModel.isLoggedIn.value == null
-        }
-
         enableEdgeToEdge()
 
         setContent {
             NoteXTheme {
-                val connectivityViewModel = hiltViewModel<ConnectivityViewModel>()
-                val isLoggedIn by authViewModel.isLoggedIn.collectAsStateWithLifecycle()
-                val isOffline by connectivityViewModel.isOffline.collectAsStateWithLifecycle()
+                val authState by authViewModel.authState
+                    .collectAsStateWithLifecycle()
 
-                // Only render the navigation once we have a definitive auth state
-                if (isLoggedIn != null) {
-                    val navController = rememberNavController()
-                    val startDest = if (isLoggedIn == true) NavGraphs.MAIN else NavGraphs.AUTH
+                val isOffline by connectivityViewModel.isOffline
+                    .collectAsStateWithLifecycle()
 
-                    RootNavGraph(
-                        navController = navController,
-                        startDestination = startDest,
-                        isOffline = isOffline
-                    )
+                LaunchedEffect(authState) {
+                    splashScreen.setKeepOnScreenCondition {
+                        authState is AuthState.Loading
+                    }
                 }
+
+                val navController = rememberNavController()
+
+                RootNavHost(
+                    navController = navController,
+                    authState = authState,
+                    isOffline = isOffline
+                )
             }
         }
     }
 }
+
+
+
+
+
+
+//                val view = LocalView.current
+//                if (!view.isInEditMode) {
+//                    SideEffect {
+//                        val window = (view.context as Activity).window
+//                        WindowCompat.setDecorFitsSystemWindows(window, false)
+//                        val insetsController = WindowCompat.getInsetsController(window, view)
+//                        insetsController.isAppearanceLightStatusBars = false
+//                        insetsController.isAppearanceLightNavigationBars = false
+//                    }
+//                }

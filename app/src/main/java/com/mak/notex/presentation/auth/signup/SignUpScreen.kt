@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,8 +34,8 @@ import coil.compose.AsyncImage
 import com.mak.notex.presentation.auth.signup.SignUpContract.Effect
 import com.mak.notex.presentation.auth.signup.SignUpContract.Event
 import com.mak.notex.presentation.auth.signup.SignUpContract.State
-import com.mak.notex.presentation.common.AppTextField
-import com.mak.notex.presentation.common.PrimaryButton
+import com.mak.notex.presentation.main.common.AppTextField
+import com.mak.notex.presentation.main.common.PrimaryButton
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
 import kotlinx.coroutines.flow.collectLatest
 

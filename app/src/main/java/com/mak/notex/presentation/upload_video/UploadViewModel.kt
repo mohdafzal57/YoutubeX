@@ -17,59 +17,6 @@ class UploadViewModel @Inject constructor() : ViewModel() {
     private val _uiState = MutableStateFlow(MainUIState())
     val uiState: StateFlow<MainUIState> = _uiState.asStateFlow()
 
-    fun onActionSelected(mode: ContentCreationMode) {
-        _uiState.update {
-            it.copy(
-                contentMode = mode,
-                isBottomSheetExpanded = false
-            )
-        }
-    }
-
-    fun toggleBottomSheet() {
-        _uiState.update {
-            it.copy(isBottomSheetExpanded = !it.isBottomSheetExpanded)
-        }
-    }
-
-    fun closeBottomSheet() {
-        _uiState.update {
-            it.copy(isBottomSheetExpanded = false)
-        }
-    }
-
-    fun startCameraPreview() {
-        _uiState.update {
-            it.copy(
-                cameraState = it.cameraState.copy(isPreviewActive = true)
-            )
-        }
-    }
-
-    fun stopCameraPreview() {
-        _uiState.update {
-            it.copy(
-                cameraState = CameraState()
-            )
-        }
-    }
-
-    fun startRecording() {
-        _uiState.update {
-            it.copy(
-                cameraState = it.cameraState.copy(isRecording = true)
-            )
-        }
-    }
-
-    fun stopRecording() {
-        _uiState.update {
-            it.copy(
-                cameraState = it.cameraState.copy(isRecording = false, recordingDuration = 0L)
-            )
-        }
-    }
-
     fun updatePostText(text: String) {
         _uiState.update {
             it.copy(
@@ -101,14 +48,31 @@ class UploadViewModel @Inject constructor() : ViewModel() {
             }
         }
     }
+}
 
-    fun closeContent() {
-        _uiState.update {
-            it.copy(
-                contentMode = ContentCreationMode.Short,
-                cameraState = CameraState(),
-                postState = PostState()
-            )
-        }
+data class MainUIState(
+    val contentMode: ContentCreationMode = ContentCreationMode.Short,
+    val postState: PostState = PostState(),
+    val isBottomSheetExpanded: Boolean = false
+)
+
+sealed class ContentCreationMode(val title: String) {
+
+    object Video : ContentCreationMode("video")
+    object Short : ContentCreationMode("short")
+    object Post : ContentCreationMode("post")
+
+    companion object {
+        val allModes get() = listOf(Video, Short, Post)
     }
+}
+
+data class PostState(
+    val text: String = "",
+    val visibility: PostVisibility = PostVisibility.PUBLIC,
+    val hasMedia: Boolean = false
+)
+
+enum class PostVisibility {
+    PUBLIC, PRIVATE, FOLLOWERS
 }

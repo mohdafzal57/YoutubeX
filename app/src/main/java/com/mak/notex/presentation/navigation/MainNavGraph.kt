@@ -1,12 +1,6 @@
 package com.mak.notex.presentation.navigation
 
-import com.mak.notex.presentation.subscription.SubscriptionScreen
-import android.net.Uri
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import com.mak.notex.presentation.main.subscription.SubscriptionScreen
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -16,16 +10,14 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.mak.notex.presentation.channel.ChannelScreen
-import com.mak.notex.presentation.home.HomeScreen
-import com.mak.notex.presentation.player.PlayerScreen
-import com.mak.notex.presentation.player.PlayerViewModel
-import com.mak.notex.presentation.search.SearchScreen
-import com.mak.notex.presentation.settings.SettingsScreen
-import com.mak.notex.presentation.tweet.CreateTweetScreen
-import com.mak.notex.presentation.ui.theme.NoteXTheme
-import com.mak.notex.presentation.upload_video.UploadScreen
-import com.mak.notex.presentation.upload_video.UploadVideoDetailScreen
+import com.mak.notex.presentation.main.channel.ChannelScreen
+import com.mak.notex.presentation.main.home.HomeScreen
+import com.mak.notex.presentation.main.player.PlayerScreen
+import com.mak.notex.presentation.main.player.PlayerViewModel
+import com.mak.notex.presentation.main.search.SearchScreen
+import com.mak.notex.presentation.main.settings.SettingsScreen
+import com.mak.notex.presentation.main.social_feed.SocialFeedScreen
+import com.mak.notex.presentation.main.tweet.CreateTweetScreen
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -48,60 +40,14 @@ fun NavGraphBuilder.mainNavGraph(
             )
         }
 
-        composable(
-            route = Screen.UploadVideo.route,
-            enterTransition = {
-                slideInVertically(
-                    initialOffsetY = { it },
-                    animationSpec = tween(400)
-                ) + fadeIn(animationSpec = tween(400))
-            },
-            exitTransition = {
-                slideOutVertically(
-                    targetOffsetY = { it },
-                    animationSpec = tween(400)
-                ) + fadeOut(animationSpec = tween(400))
-            },
-            popEnterTransition = {
-                fadeIn(animationSpec = tween(400))
-            },
-            popExitTransition = {
-                slideOutVertically(
-                    targetOffsetY = { it },
-                    animationSpec = tween(400)
-                ) + fadeOut(animationSpec = tween(400))
-            }
-        ) {
-            UploadScreen(
-                navigateToUploadDetail = { uri ->
-                    val encodedUri = Uri.encode(uri.toString())
-                    navController.navigate(Screen.UploadVideoDetailScreen.route + "/${encodedUri}")
-                },
-                onBackClick = { navController.popBackStack() }
+        composable(Screen.SocialFeed.route) {
+            SocialFeedScreen(
+                /*onNavigateToChannel = { username, ownerId ->
+                    navController.navigate(Screen.ChannelDetail.route + "/$username/$ownerId")
+                },*/
             )
         }
 
-        composable(
-            Screen.UploadVideoDetailScreen.route + "/{videoUri}",
-            arguments = listOf(
-                navArgument("videoUri") {
-                    type = NavType.StringType
-                }
-            )
-        ) {
-            UploadVideoDetailScreen(
-                onCancel = { navController.popBackStack() },
-                onNavigateToHome = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.UploadVideoDetailScreen.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(Screen.CreateTweet.route) {
-            CreateTweetScreen()
-        }
         composable(Screen.Search.route) {
             SearchScreen(
                 onBackClick = {

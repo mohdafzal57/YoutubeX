@@ -1,14 +1,11 @@
 package com.mak.notex.presentation.navigation
 
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Transition
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.ime
@@ -29,23 +26,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.mak.notex.presentation.common.YootubeBottomAppBar
-import com.mak.notex.presentation.common.YootubeTopAppBar
-import kotlinx.coroutines.flow.MutableSharedFlow
+import com.mak.notex.R
+import com.mak.notex.presentation.auth.AuthState
+import com.mak.notex.presentation.main.common.YootubeBottomAppBar
+import com.mak.notex.presentation.main.common.YootubeTopAppBar
 
 val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
     error("SnackbarHostState not provided")
 }
 
 @Composable
-fun RootNavGraph(
+fun RootNavHost(
     navController: NavHostController = rememberNavController(),
-    startDestination: String = NavGraphs.AUTH,
+    authState: AuthState,
     isOffline: Boolean
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -58,12 +57,27 @@ fun RootNavGraph(
         route in TOP_LEVEL_DESTINATIONS
     } ?: false
 
+    val notConnectedMessage = stringResource(R.string.not_connected)
     LaunchedEffect(isOffline) {
         if (isOffline) {
             snackbarHostState.showSnackbar(
-                message = "⚠️ You aren’t connected to the internet",
-                duration = SnackbarDuration.Long,
+                message = notConnectedMessage,
+                duration = SnackbarDuration.Indefinite,
             )
+        }
+    }
+
+    // Global logout listener: Navigates to AUTH if authState becomes Unauthenticated
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Unauthenticated) {
+            val currentDest = navController.currentDestination?.route
+            val isInAuth = navController.currentDestination?.parent?.route == NavGraphs.AUTH
+
+            if (currentDest != "bootstrap" && !isInAuth) {
+                navController.navigate(NavGraphs.AUTH) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
         }
     }
 
@@ -72,7 +86,6 @@ fun RootNavGraph(
             contentColor = MaterialTheme.colorScheme.onBackground,
             color = MaterialTheme.colorScheme.background
         ) {
-
             Scaffold(
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onBackground,
@@ -88,7 +101,11 @@ fun RootNavGraph(
                     )
                 },
                 topBar = {
-                    if (isMainGraph) {
+                    AnimatedVisibility(
+                        visible = isMainGraph,
+                        enter = slideInVertically(initialOffsetY = { -it }),
+                        exit = slideOutVertically(targetOffsetY = { -it })
+                    ) {
                         YootubeTopAppBar(
                             onNavigateToSearch = {
                                 navController.navigate(Screen.Search.route)
@@ -97,7 +114,11 @@ fun RootNavGraph(
                     }
                 },
                 bottomBar = {
-                    if (isMainGraph) {
+                    AnimatedVisibility(
+                        visible = isMainGraph,
+                        enter = slideInVertically(initialOffsetY = { it }),
+                        exit = slideOutVertically(targetOffsetY = { it })
+                    ) {
                         YootubeBottomAppBar(
                             currentRoute = currentRoute,
                             onNavigate = { route ->
@@ -118,15 +139,30 @@ fun RootNavGraph(
             ) { paddingValues ->
                 NavHost(
                     navController = navController,
-                    startDestination = startDestination,
+                    startDestination = "bootstrap",
                     modifier = if (isMainGraph) Modifier.padding(paddingValues) else Modifier,
-                    enterTransition = {
-                        fadeIn(animationSpec = tween(150, easing = FastOutSlowInEasing))
-                    },
-                    exitTransition = {
-                        fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
-                    }
+                    enterTransition = { fadeIn(tween(200)) },
+                    exitTransition = { fadeOut(tween(200)) },
+                    popEnterTransition = { fadeIn(tween(200)) },
+                    popExitTransition = { fadeOut(tween(200)) }
                 ) {
+
+                    composable("bootstrap") {
+                        BootstrapRoute(
+                            authState = authState,
+                            onAuthenticated = {
+                                navController.navigate(NavGraphs.MAIN) {
+                                    popUpTo("bootstrap") { inclusive = true }
+                                }
+                            },
+                            onUnauthenticated = {
+                                navController.navigate(NavGraphs.AUTH) {
+                                    popUpTo("bootstrap") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
                     authNavGraph(
                         navController = navController,
                         onNavigateToMain = {
@@ -146,6 +182,21 @@ fun RootNavGraph(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun BootstrapRoute(
+    authState: AuthState,
+    onAuthenticated: () -> Unit,
+    onUnauthenticated: () -> Unit
+) {
+    LaunchedEffect(authState) {
+        when(authState) {
+            AuthState.Authenticated -> onAuthenticated()
+            AuthState.Loading -> Unit
+            AuthState.Unauthenticated -> onUnauthenticated()
         }
     }
 }

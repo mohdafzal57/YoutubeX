@@ -1,17 +1,34 @@
 package com.mak.notex.presentation.upload_video
 
-import android.R.attr.duration
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,8 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.mak.notex.presentation.main.common.AppScaffold
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
-
 
 @Composable
 fun UploadVideoDetailScreen(
@@ -35,33 +52,34 @@ fun UploadVideoDetailScreen(
     val thumbnailPicker = rememberThumbnailPicker {
         viewModel.onThumbnailChange(it)
     }
-    val snackbarHostState = LocalSnackbarHostState.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect {
             when (it) {
                 UploadEvent.NavigateHome -> onNavigateToHome()
                 is UploadEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(
-                        message = it.message,
-                        duration = SnackbarDuration.Short
-                    )
+//                    snackbarHostState.showSnackbar(
+//                        message = it.message,
+//                        duration = SnackbarDuration.Short
+//                    )
                 }
             }
         }
     }
-
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(
+        title = "Upload Video",
+        onBackClick = onCancel,
+        showBackButton = true
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-
             Column {
-
-                // 🎞 Thumbnail
+                //   Thumbnail
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -95,7 +113,7 @@ fun UploadVideoDetailScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // ✏️ Title
+                // Title
                 OutlinedTextField(
                     value = uiState.title,
                     onValueChange = viewModel::onTitleChange,
@@ -118,7 +136,7 @@ fun UploadVideoDetailScreen(
                 )
             }
 
-            // 🔘 Action buttons
+            //  Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -137,29 +155,21 @@ fun UploadVideoDetailScreen(
                     modifier = Modifier.weight(1f),
                     enabled = uiState.title.isNotBlank() && !uiState.isLoading
                 ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("Upload")
-                    }
+                    Text("Upload")
                 }
             }
         }
 
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f))
-                    .clickable(enabled = false) {},
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+    }
+    if (uiState.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
     }
 }

@@ -1,8 +1,5 @@
 package com.mak.notex.utils
 
-import android.R.attr.data
-import retrofit2.CallAdapter
-
 typealias DomainError = Error
 
 sealed interface Result<out T, out E: DomainError> {

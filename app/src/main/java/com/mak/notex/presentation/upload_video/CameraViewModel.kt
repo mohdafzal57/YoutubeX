@@ -9,11 +9,8 @@ import android.provider.MediaStore
 import androidx.annotation.RequiresPermission
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -25,278 +22,248 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
-import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
-import androidx.compose.ui.geometry.Offset
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.Executor
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.coroutines.resume
-
-/**
- * CameraViewModel:
- *
- * CameraX "use cases" (Preview, ImageCapture, VideoCapture) are configured here and
- * exposed to the UI as simple state flows. The composables remain lightweight and react
- * to state changes (e.g., new SurfaceRequest).
- *
- * Key CameraX types used in this file:
- *  - ProcessCameraProvider: entry point to bind/unbind use cases to a lifecycle.
- *  - Preview: requests a drawing surface (SurfaceRequest) for the live camera feed.
- *  - ImageCapture: takes still photos (JPEG).
- *  - VideoCapture + Recorder: records encoded video to an output (e.g., MediaStore).
- *  - Camera: gives cameraInfo (zoomState) and cameraControl (zoom/focus commands).
- */
 
 @HiltViewModel
 class CameraViewModel @Inject constructor(
     app: Application
 ) : AndroidViewModel(app) {
 
-    // ---- UI-observed state ---------------------------------------------------------------------
+    /* ----------------------------- Recording State ----------------------------- */
 
-    /** Latest SurfaceRequest; feed into CameraXViewfinder to render preview frames. */
-    val surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    sealed interface RecordingState {
+        object Idle : RecordingState
+        data class Active(
+            val recording: Recording,
+            val isPaused: Boolean
+        ) : RecordingState
+    }
 
-    /** Bound camera instance; exposes cameraInfo/cameraControl for interactions. */
-    val camera = MutableStateFlow<Camera?>(null)
+    private val _recordingState =
+        MutableStateFlow<RecordingState>(RecordingState.Idle)
+    val recordingState: StateFlow<RecordingState> =
+        _recordingState.asStateFlow()
 
-    /** Still capture use case; set when bindCapture() is active. */
-    val imageCapture = MutableStateFlow<ImageCapture?>(null)
+    /* ----------------------------- Camera State ----------------------------- */
 
-    /** Video capture use case (Recorder-backed); set when bindCapture() is active. */
-    val videoCapture = MutableStateFlow<VideoCapture<Recorder>?>(null)
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    val surfaceRequest: StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
-    /** Currently active recording handle (null when idle). */
-    val recording = MutableStateFlow<Recording?>(null)
+    private val _camera = MutableStateFlow<Camera?>(null)
+    val camera: StateFlow<Camera?> = _camera.asStateFlow()
 
-    val videoRecordingUri = MutableStateFlow<Uri?>(null)
+    private val _videoCapture = MutableStateFlow<VideoCapture<Recorder>?>(null)
+    val videoCapture: StateFlow<VideoCapture<Recorder>?> = _videoCapture.asStateFlow()
 
-    // ---- Android infrastructure (executors, app context) --------------------------------------
+    private val _videoRecordingUri = MutableStateFlow<Uri?>(null)
+    val videoRecordingUri: StateFlow<Uri?> = _videoRecordingUri.asStateFlow()
+
+    private val _lensFacing = MutableStateFlow(CameraSelector.LENS_FACING_BACK)
+    val lensFacing: StateFlow<Int> = _lensFacing.asStateFlow()
+
+    private val _flashMode = MutableStateFlow(ImageCapture.FLASH_MODE_OFF)
+    val flashMode: StateFlow<Int> = _flashMode.asStateFlow()
+
+    private var currentLifecycleOwner: LifecycleOwner? = null
 
     private val appContext = app.applicationContext
-    private val mainExecutor: Executor get() = ContextCompat.getMainExecutor(appContext)
+    private val mainExecutor: Executor
+        get() = ContextCompat.getMainExecutor(appContext)
 
-    // FYI: Old-school way to await a ListenableFuture provider. Left for reference.
-    private suspend fun provider_old(): ProcessCameraProvider =
-        suspendCancellableCoroutine { cont ->
-            val future = ProcessCameraProvider.getInstance(appContext)
-            future.addListener(
-                { try { cont.resume(future.get()) } catch (t: Throwable) { cont.cancel(t) } },
-                mainExecutor
-            )
-            cont.invokeOnCancellation { future.cancel(true) }
-        }
-
-    /** Preferred suspending API (CameraX 1.4+): clean, cancellation-aware provider. */
     private suspend fun provider(): ProcessCameraProvider =
         ProcessCameraProvider.awaitInstance(getApplication())
 
-    // ---- Binding use cases (where the pipeline is defined) -------------------------------------
+    /* ----------------------------- Binding ----------------------------- */
 
-    /**
-     * Preview-only binding.
-     *
-     * Flow:
-     *  1) Build Preview and route its SurfaceRequest to [surfaceRequest].
-     *  2) Unbind previous use cases (only one set can be active).
-     *  3) Bind to [lifecycleOwner] with the given [selector] (front/back).
-     */
-    fun bindPreview(
-        lifecycleOwner: LifecycleOwner,
-        selector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-    ) {
-        viewModelScope.launch {
-            val provider = provider()
-
-            val preview = Preview.Builder().build().apply {
-                // CameraX will call this whenever it needs a surface to draw into.
-                setSurfaceProvider { req -> surfaceRequest.value = req }
-            }
-
-            provider.unbindAll()
-
-            // Resulting Camera gives us cameraInfo/control for zoom/focus later.
-            camera.value = provider.bindToLifecycle(lifecycleOwner, selector, preview)
-
-            // Ensure capture use cases are cleared in preview-only mode.
-            imageCapture.value = null
-            videoCapture.value = null
-        }
-    }
-
-    /**
-     * Full binding (Preview + ImageCapture + VideoCapture).
-     *
-     * Notes on quality:
-     *  - ImageCapture CAPTURE_MODE_MINIMIZE_LATENCY → faster shutter; consider MAX_QUALITY if needed.
-     *  - Recorder quality via QualitySelector (e.g., FHD/HD/UHD).
-     */
     fun bindCapture(
         lifecycleOwner: LifecycleOwner,
-        selector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
         quality: Quality = Quality.FHD
     ) {
+        currentLifecycleOwner = lifecycleOwner
+
         viewModelScope.launch {
             val provider = provider()
 
-            val preview = Preview.Builder().build().apply {
-                setSurfaceProvider { req -> surfaceRequest.value = req }
-            }
-
-            val img = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            val selector = CameraSelector.Builder()
+                .requireLensFacing(_lensFacing.value)
                 .build()
+
+            val preview = Preview.Builder().build().apply {
+                setSurfaceProvider { req ->
+                    _surfaceRequest.value = req
+                }
+            }
 
             val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(
-                    quality,
-                    FallbackStrategy.higherQualityOrLowerThan(Quality.FHD)
-                ))
+                .setQualitySelector(
+                    QualitySelector.from(
+                        quality,
+                        FallbackStrategy.higherQualityOrLowerThan(Quality.FHD)
+                    )
+                )
                 .build()
-            val vid = VideoCapture.withOutput(recorder)
 
-            provider.unbindAll()
+            val videoCapture = VideoCapture.withOutput(recorder)
 
-            // Bind all use cases together so they share the same internal camera session.
-            camera.value = provider.bindToLifecycle(lifecycleOwner, selector, preview, img, vid)
-            imageCapture.value = img
-            videoCapture.value = vid
+            try {
+                provider.unbindAll()
+
+                _camera.value = provider.bindToLifecycle(
+                    lifecycleOwner,
+                    selector,
+                    preview,
+                    videoCapture
+                )
+
+                _videoCapture.value = videoCapture
+
+            } catch (_: Exception) {
+                // optional logging
+            }
         }
     }
 
-    // ---- User interactions (focus/zoom) --------------------------------------------------------
+    /* ----------------------------- Camera Controls ----------------------------- */
 
-    /**
-     * Tap-to-focus around a point in the preview.
-     *
-     * Why the transformer?
-     *  - UI coordinates are in Compose pixels; the camera operates in "surface space".
-     *  - MutableCoordinateTransformer performs the correct mapping (rotation, crop/scale).
-     */
-    fun onTapToFocus(
-        uiOffset: Offset,
-        transformer: MutableCoordinateTransformer,
-        request: SurfaceRequest
-    ) {
-        val cam = camera.value ?: return
+    fun toggleCamera() {
+        _lensFacing.update {
+            if (it == CameraSelector.LENS_FACING_BACK)
+                CameraSelector.LENS_FACING_FRONT
+            else
+                CameraSelector.LENS_FACING_BACK
+        }
 
-        // Convert UI tap → surface pixel coordinates.
-        val pt = with(transformer) { uiOffset.transform() }
-
-        // Build a metering point for AF/AE using the actual surface resolution.
-        val factory = SurfaceOrientedMeteringPointFactory(
-            request.resolution.width.toFloat(),
-            request.resolution.height.toFloat()
-        )
-
-        val action = FocusMeteringAction.Builder(
-            factory.createPoint(pt.x, pt.y),
-            FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE
-        )
-            .setAutoCancelDuration(3, TimeUnit.SECONDS) // Return to continuous AF/AE after a short window.
-            .build()
-
-        cam.cameraControl.startFocusAndMetering(action)
+        currentLifecycleOwner?.let { bindCapture(it) }
     }
 
-    /**
-     * Pinch zoom handler.
-     *  - We read current zoom state (ratio + min/max) from cameraInfo.
-     *  - Apply multiplicative delta and clamp; CameraX handles the rest.
-     */
-    fun onZoomChange(zoomChange: Float) {
-        val cam = camera.value ?: return
-        val z = cam.cameraInfo.zoomState.value ?: return
-        val newRatio = (z.zoomRatio * zoomChange).coerceIn(z.minZoomRatio, z.maxZoomRatio)
-        cam.cameraControl.setZoomRatio(newRatio)
-    }
-
-    // ---- Capture (photo/video) to MediaStore ---------------------------------------------------
-
-    /**
-     * Capture a JPEG to MediaStore (public gallery).
-     * On Android 10+ we also set RELATIVE_PATH → DCIM/CameraX.
-     */
-    fun capturePhoto() {
-        val capture = imageCapture.value ?: return
-
-        val name = "IMG_${System.currentTimeMillis()}.jpg"
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, name)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/CameraX")
+    fun toggleFlash() {
+        _flashMode.update {
+            when (it) {
+                ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
+                ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
+                else -> ImageCapture.FLASH_MODE_OFF
             }
         }
 
-        val out = ImageCapture.OutputFileOptions.Builder(
-            appContext.contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            values
-        ).build()
-
-        capture.takePicture(out, mainExecutor, object : ImageCapture.OnImageSavedCallback {
-            override fun onError(exception: ImageCaptureException) {
-                // Hook for UI feedback/logging.
-            }
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                // Hook: output.savedUri available for sharing/snackbar.
-            }
-        })
+        _camera.value?.cameraControl
+            ?.enableTorch(_flashMode.value == ImageCapture.FLASH_MODE_ON)
     }
 
-    /**
-     * Start/stop video recording to MediaStore.
-     *
-     * Assumptions:
-     *  - RECORD_AUDIO has been granted (gated in UI by PermissionGate).
-     *  - If you want "silent" recording when mic is denied, make .withAudioEnabled() conditional.
-     */
+    /* ----------------------------- Recording Logic ----------------------------- */
+
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun toggleRecording() {
-        val vc = videoCapture.value ?: return
+        val vc = _videoCapture.value ?: return
 
-        // Stop current recording if running.
-        recording.value?.let {
-            it.stop()
-            recording.value = null
-            return
+        when (val state = _recordingState.value) {
+
+            RecordingState.Idle -> {
+                startRecording(vc)
+            }
+
+            is RecordingState.Active -> {
+                if (state.isPaused) {
+                    state.recording.resume()
+                    _recordingState.value =
+                        state.copy(isPaused = false)
+                } else {
+                    state.recording.pause()
+                    _recordingState.value =
+                        state.copy(isPaused = true)
+                }
+            }
         }
+    }
 
-        // Prepare a new recording session.
+    fun stopRecording() {
+        val state = _recordingState.value
+        if (state is RecordingState.Active) {
+            state.recording.stop()
+        }
+    }
+
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    private fun startRecording(
+        videoCapture: VideoCapture<Recorder>
+    ) {
         val name = "VID_${System.currentTimeMillis()}.mp4"
+
         val values = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
             put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Video.Media.RELATIVE_PATH, "DCIM/CameraX")
+                put(
+                    MediaStore.Video.Media.RELATIVE_PATH,
+                    "DCIM/NoteX"
+                )
             }
         }
 
-        val out = MediaStoreOutputOptions.Builder(
+        val outputOptions = MediaStoreOutputOptions.Builder(
             appContext.contentResolver,
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        ).setContentValues(values).build()
+        )
+            .setContentValues(values)
+            .build()
 
-        recording.value = vc.output
-            .prepareRecording(appContext, out)
-            .withAudioEnabled() // change to conditional if you want silent-video fallback
+        val recording = videoCapture.output
+            .prepareRecording(appContext, outputOptions)
+            .withAudioEnabled()
             .start(mainExecutor) { event ->
-                // We only need to clear the handle once finalized; inspect event for errors if needed.
+
                 if (event is VideoRecordEvent.Finalize) {
-                    if(!event.hasError()) {
-                        videoRecordingUri.value = event.outputResults.outputUri
+
+                    if (!event.hasError()) {
+                        _videoRecordingUri.value =
+                            event.outputResults.outputUri
                     }
-                    recording.value = null
+
+                    _recordingState.value = RecordingState.Idle
                 }
             }
+
+        _recordingState.value =
+            RecordingState.Active(
+                recording = recording,
+                isPaused = false
+            )
+    }
+
+    /* ----------------------------- Helpers ----------------------------- */
+
+    fun clearVideoUri() {
+        _videoRecordingUri.value = null
+    }
+
+    fun releaseCamera() {
+        viewModelScope.launch {
+            try {
+                stopRecording()
+
+                val provider = provider()
+                provider.unbindAll()
+
+                _camera.value = null
+                _videoCapture.value = null
+                _surfaceRequest.value = null
+                currentLifecycleOwner = null
+
+                _recordingState.value = RecordingState.Idle
+
+            } catch (_: Exception) {
+                // optional logging
+            }
+        }
     }
 }

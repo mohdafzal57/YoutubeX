@@ -35,7 +35,7 @@ class VideoRepositoryImpl @Inject constructor(
 
     override suspend fun uploadVideo(
         request: VideoUploadRequest
-    ): Result<Video, NetworkError> {
+    ): Result<Unit, NetworkError> {
         return safeCall {
             videoApi.publishAVideo(
                 videoFile = request.videoFile.toVideoMultipart(contentResolver, "videoFile"),
@@ -43,7 +43,7 @@ class VideoRepositoryImpl @Inject constructor(
                 title = request.title.toTextRequestBody(),
                 description = request.description.toTextRequestBody()
             )
-        }.map { it.toDomain() }
+        }
     }
 
     override fun getUserVideos(

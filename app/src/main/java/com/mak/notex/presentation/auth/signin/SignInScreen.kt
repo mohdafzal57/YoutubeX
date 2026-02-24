@@ -32,7 +32,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,8 +41,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mak.notex.R
 import com.mak.notex.data.utils.ObserveAsEvents
-import com.mak.notex.presentation.common.AppTextField
-import com.mak.notex.presentation.common.PrimaryButton
+import com.mak.notex.presentation.main.common.AppTextField
+import com.mak.notex.presentation.main.common.PrimaryButton
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState
 import kotlinx.coroutines.launch
 

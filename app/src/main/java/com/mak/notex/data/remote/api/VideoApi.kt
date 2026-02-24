@@ -33,7 +33,7 @@ interface VideoApi {
         @Part thumbnail: MultipartBody.Part,
         @Part("title") title: RequestBody,
         @Part("description") description: RequestBody
-    ): Response<ApiResponse<VideoDto>>
+    ): Response<ApiResponse<Unit>>
 
     @GET("videos/feed")
     suspend fun getVideoFeed(

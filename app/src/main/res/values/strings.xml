@@ -45,4 +45,7 @@
     <string name="error_client">Something is wrong with your request</string>
     <string name="error_not_found">Resource not found</string>
 
+    <string name="not_connected">⚠️ You aren’t connected to the internet</string>
+    <string name="title_activity_upload">UploadActivity</string>
+
 </resources>

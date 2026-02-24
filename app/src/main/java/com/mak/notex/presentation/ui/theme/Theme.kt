@@ -9,34 +9,61 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = DarkPrimary,
-    onPrimary = DarkOnPrimary,
-    primaryContainer = DarkPrimaryContainer,
-    onPrimaryContainer = DarkOnPrimaryContainer,
-    background = DarkBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = DarkOnSurfaceVariant,
-    outline = DarkOutline,
-    error = DarkError
+
+    primary = BrandPrimary,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF7F0018),
+    onPrimaryContainer = BrandPrimaryContainer,
+
+    secondary = AccentBlue,
+    onSecondary = Color.Black,
+    secondaryContainer = AccentBlueContainer,
+    onSecondaryContainer = Color(0xFFD0E4FF),
+
+    background = Neutral0,
+    onBackground = Neutral90,
+
+    surface = Neutral10,
+    onSurface = Neutral90,
+
+    surfaceVariant = Neutral30,
+    onSurfaceVariant = Neutral70,
+
+    outline = Neutral40,
+
+    error = ErrorDark,
+    onError = Color(0xFF690005)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = LightPrimary,
-    onPrimary = LightOnPrimary,
-    primaryContainer = LightPrimaryContainer,
-    onPrimaryContainer = LightOnPrimaryContainer,
-    background = LightBackground,
-    surface = LightSurface,
-    onSurface = LightOnSurface,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = LightOnSurfaceVariant,
-    outline = LightOutline,
-    error = LightError
+
+    primary = BrandPrimary,
+    onPrimary = Color.White,
+    primaryContainer = BrandPrimaryContainer,
+    onPrimaryContainer = BrandOnPrimaryContainer,
+
+    secondary = AccentBlue,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFD6E3FF),
+    onSecondaryContainer = Color(0xFF001B3D),
+
+    background = LightNeutral0,
+    onBackground = LightNeutral90,
+
+    surface = LightNeutral0,
+    onSurface = LightNeutral90,
+
+    surfaceVariant = LightNeutral20,
+    onSurfaceVariant = LightNeutral60,
+
+    outline = LightNeutral40,
+
+    error = ErrorLight,
+    onError = Color.White
 )
 
 //@Composable

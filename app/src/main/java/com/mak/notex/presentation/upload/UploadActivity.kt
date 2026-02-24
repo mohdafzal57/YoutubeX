@@ -1,0 +1,192 @@
+package com.mak.notex.presentation.upload
+
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.mak.notex.R
+import com.mak.notex.presentation.navigation.Screen
+import com.mak.notex.presentation.upload.ui.theme.NoteXTheme
+import com.mak.notex.presentation.upload_video.ContentCreationMode
+import com.mak.notex.presentation.upload_video.ModeSelector
+import com.mak.notex.presentation.upload_video.UploadVideoDetailScreen
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
+class UploadActivity : ComponentActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.TRANSPARENT
+            )
+        )
+
+        setContent {
+            NoteXTheme(darkTheme = true) {
+
+                val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+                val mode = ContentCreationMode.allModes.find { it.title == currentRoute }
+                    ?: ContentCreationMode.Short
+                val isUploadDetail =
+                    currentRoute?.startsWith(Screen.UploadVideoDetailScreen.route) == true
+
+                val isRecording = remember { mutableStateOf(false) }
+
+                val shouldShowBottomBar =
+                    !isUploadDetail && !isRecording.value
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets.systemBars,
+                    containerColor = Color.Black,
+                    bottomBar = {
+                        Box(Modifier.consumeWindowInsets(WindowInsets.ime)) {
+                            Surface(
+                                color = Color.Black,
+                                tonalElevation = 8.dp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                BottomAppBar(
+                                    containerColor = Color.Transparent
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Crossfade(shouldShowBottomBar) {visible ->
+                                            if (visible) {
+                                                ModeSelector(
+                                                    selectedMode = mode,
+                                                    onModeSelected = { route ->
+                                                        navController.navigate(route.title) {
+                                                            popUpTo(0) { inclusive = true }
+                                                            launchSingleTop = true
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) { paddingValues ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = Screen.Short.route,
+                        modifier = Modifier
+                            .padding(paddingValues)
+                            .consumeWindowInsets(paddingValues)
+                    ) {
+
+                        composable(
+                            route = Screen.Short.route
+                        ) {
+                            ShortScreen(
+                                navigateToUploadDetail = { uri ->
+                                    val encodedUri = Uri.encode(uri.toString())
+                                    navController.navigate(Screen.UploadVideoDetailScreen.route + "/${encodedUri}")
+                                },
+                                onBackClick = {
+                                    this@UploadActivity.finish()
+                                },
+                                onRecording = {
+                                    isRecording.value = it
+                                }
+                            )
+                        }
+                        composable(
+                            route = Screen.Video.route
+                        ) {
+                            VideoScreen(
+                                onCloseClick = { navController.popBackStack() }
+                            )
+                        }
+                        composable(
+                            route = Screen.Post.route
+                        ) {
+                            PostScreen(
+                                onCloseClick = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(
+                            Screen.UploadVideoDetailScreen.route + "/{videoUri}",
+                            arguments = listOf(
+                                navArgument("videoUri") {
+                                    type = NavType.StringType
+                                }
+                            )
+                        ) {
+                            UploadVideoDetailScreen(
+                                onCancel = { navController.popBackStack() },
+                                onNavigateToHome = {
+                                    this@UploadActivity.finish()
+                                }
+                            )
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    override fun finish() {
+        super.finish()
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(
+                OVERRIDE_TRANSITION_CLOSE,
+                R.anim.stay,
+                R.anim.slide_down
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            overridePendingTransition(R.anim.stay, R.anim.slide_down)
+        }
+    }
+}
+
+@Composable
+internal fun A() {
+
+}

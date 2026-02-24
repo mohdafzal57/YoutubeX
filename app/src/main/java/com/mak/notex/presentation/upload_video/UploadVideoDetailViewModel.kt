@@ -1,12 +1,10 @@
 package com.mak.notex.presentation.upload_video
 
-import android.app.Application
 import android.net.Uri
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mak.notex.data.repository.VideoRepositoryImpl
 import com.mak.notex.domain.model.VideoUploadRequest
 import com.mak.notex.domain.repository.VideoRepository
 import com.mak.notex.utils.onFailure
