@@ -30,14 +30,14 @@ fun PlayerScreen(
     videoUrl: String,
     uiState: PlayerUiState,
     onEvent: (PlayerEvent) -> Unit,
-    onBack: () -> Unit
+    onBackClick: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         VideoPlayerBackground(videoUrl = videoUrl)
 
-        TransparentTopBar(onBack = onBack)
+        TransparentTopBar(onBack = onBackClick)
 
 //        ActionButtonsColumn(
 //            uiState = uiState,

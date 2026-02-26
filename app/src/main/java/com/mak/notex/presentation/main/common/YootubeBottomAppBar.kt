@@ -29,8 +29,35 @@ import com.mak.notex.presentation.upload.UploadActivity
 data class BottomNavigationItem(
     val title: String,
     val selectedIcon: ImageVector,
-    val unSelectedIcon: ImageVector,
-    val route: String
+    val unSelectedIcon: ImageVector
+)
+
+val TOP_LEVEL_DESTINATIONS = mapOf(
+    Screen.Home.route to BottomNavigationItem(
+        title = "Home",
+        selectedIcon = Icons.Filled.Home,
+        unSelectedIcon = Icons.Outlined.Home
+    ),
+    Screen.SocialFeed.route to BottomNavigationItem(
+        title = "Posts",
+        selectedIcon = Icons.Filled.Image,
+        unSelectedIcon = Icons.Outlined.Image
+    ),
+    Screen.Short.route to BottomNavigationItem(
+        title = "Upload",
+        selectedIcon = Icons.Filled.AddCircleOutline,
+        unSelectedIcon = Icons.Outlined.AddCircleOutline
+    ),
+    Screen.Subscription.route to BottomNavigationItem(
+        title = "Subscriptions",
+        selectedIcon = Icons.Filled.Subscriptions,
+        unSelectedIcon = Icons.Outlined.Subscriptions
+    ),
+    Screen.Settings.route to BottomNavigationItem(
+        title = "You",
+        selectedIcon = Icons.Filled.AccountCircle,
+        unSelectedIcon = Icons.Outlined.AccountCircle
+    )
 )
 
 @Composable
@@ -39,50 +66,17 @@ fun YootubeBottomAppBar(
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
-    val bottomNavigationItems = listOf(
-        BottomNavigationItem(
-            title = "Home",
-            selectedIcon = Icons.Filled.Home,
-            unSelectedIcon = Icons.Outlined.Home,
-            route = Screen.Home.route
-        ),
-        BottomNavigationItem(
-            title = "Posts",
-            selectedIcon = Icons.Filled.Image,
-            unSelectedIcon = Icons.Outlined.Image,
-            route = Screen.SocialFeed.route
-        ),
-        BottomNavigationItem(
-            title = "Upload",
-            selectedIcon = Icons.Filled.AddCircleOutline,
-            unSelectedIcon = Icons.Outlined.AddCircleOutline,
-            route = Screen.Short.route
-        ),
-        BottomNavigationItem(
-            title = "Subscriptions",
-            selectedIcon = Icons.Filled.Subscriptions,
-            unSelectedIcon = Icons.Outlined.Subscriptions,
-            route = Screen.Subscription.route
-        ),
-        BottomNavigationItem(
-            title = "You",
-            selectedIcon = Icons.Filled.AccountCircle,
-            unSelectedIcon = Icons.Outlined.AccountCircle,
-            route = Screen.Settings.route
-        )
-    )
-
     NavigationBar(
         modifier = modifier,
         containerColor = YTNavigationDefaults.containerColor()
     ) {
-        bottomNavigationItems.forEach { item ->
-            val isSelected = currentRoute?.startsWith(item.route) == true
+        TOP_LEVEL_DESTINATIONS.forEach { (destination, item) ->
+            val isSelected = currentRoute?.startsWith(destination) == true
             val context = LocalContext.current
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-                    if (item.route == Screen.Short.route) {
+                    if (destination == Screen.Short.route) {
 
                         val activity = context as? Activity
                         val intent = Intent(context, UploadActivity::class.java)
@@ -107,7 +101,7 @@ fun YootubeBottomAppBar(
                         }
 
                     } else {
-                        onNavigate(item.route)
+                        onNavigate(destination)
                     }
                 },
                 icon = {

@@ -48,29 +48,25 @@ class UploadActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(
-                android.graphics.Color.TRANSPARENT
-            ),
-            navigationBarStyle = SystemBarStyle.dark(
-                android.graphics.Color.TRANSPARENT
-            )
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
 
         setContent {
             NoteXTheme(darkTheme = true) {
-
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+
+                // Best Practice: Use the route from Screen object instead of hardcoded title comparison
                 val mode = ContentCreationMode.allModes.find { it.title == currentRoute }
                     ?: ContentCreationMode.Short
+
                 val isUploadDetail =
-                    currentRoute?.startsWith(Screen.UploadVideoDetailScreen.route) == true
+                    currentRoute?.startsWith(Screen.UploadVideoDetail.route.substringBefore("/{")) == true
 
                 val isRecording = remember { mutableStateOf(false) }
-
-                val shouldShowBottomBar =
-                    !isUploadDetail && !isRecording.value
+                val shouldShowBottomBar = !isUploadDetail && !isRecording.value
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -81,22 +77,20 @@ class UploadActivity : ComponentActivity() {
                             Surface(
                                 color = Color.Black,
                                 tonalElevation = 8.dp,
-                                modifier = Modifier
-                                    .fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                BottomAppBar(
-                                    containerColor = Color.Transparent
-                                ) {
+                                BottomAppBar(containerColor = Color.Transparent) {
                                     Box(
                                         modifier = Modifier.fillMaxWidth(),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Crossfade(shouldShowBottomBar) {visible ->
+                                        Crossfade(shouldShowBottomBar, label = "") { visible ->
                                             if (visible) {
                                                 ModeSelector(
                                                     selectedMode = mode,
-                                                    onModeSelected = { route ->
-                                                        navController.navigate(route.title) {
+                                                    onModeSelected = { selectedMode ->
+                                                        // selectedMode.title should ideally correspond to Screen.X.route
+                                                        navController.navigate(selectedMode.title) {
                                                             popUpTo(0) { inclusive = true }
                                                             launchSingleTop = true
                                                         }
@@ -117,56 +111,39 @@ class UploadActivity : ComponentActivity() {
                             .padding(paddingValues)
                             .consumeWindowInsets(paddingValues)
                     ) {
-
-                        composable(
-                            route = Screen.Short.route
-                        ) {
+                        composable(route = Screen.Short.route) {
                             ShortScreen(
                                 navigateToUploadDetail = { uri ->
-                                    val encodedUri = Uri.encode(uri.toString())
-                                    navController.navigate(Screen.UploadVideoDetailScreen.route + "/${encodedUri}")
+                                    // BEST PRACTICE: Use the helper function from Screen.kt
+                                    navController.navigate(Screen.UploadVideoDetail.createRoute(uri.toString()))
                                 },
-                                onBackClick = {
-                                    this@UploadActivity.finish()
-                                },
-                                onRecording = {
-                                    isRecording.value = it
-                                }
-                            )
-                        }
-                        composable(
-                            route = Screen.Video.route
-                        ) {
-                            VideoScreen(
-                                onCloseClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable(
-                            route = Screen.Post.route
-                        ) {
-                            PostScreen(
-                                onCloseClick = { navController.popBackStack() }
+                                onBackClick = { finish() },
+                                onRecording = { isRecording.value = it }
                             )
                         }
 
+                        composable(route = Screen.Video.route) {
+                            VideoScreen(onCloseClick = { finish() })
+                        }
+
+                        composable(route = Screen.Post.route) {
+                            PostScreen(onCloseClick = { finish() })
+                        }
+
                         composable(
-                            Screen.UploadVideoDetailScreen.route + "/{videoUri}",
+                            route = Screen.UploadVideoDetail.route,
                             arguments = listOf(
-                                navArgument("videoUri") {
-                                    type = NavType.StringType
-                                }
+                                // BEST PRACTICE: Use constant from Screen companion
+                                navArgument(Screen.ARG_VIDEO_URI) { type = NavType.StringType }
                             )
                         ) {
                             UploadVideoDetailScreen(
                                 onCancel = { navController.popBackStack() },
-                                onNavigateToHome = {
-                                    this@UploadActivity.finish()
-                                }
+                                onNavigateToHome = { finish() }
                             )
                         }
                     }
                 }
-
             }
         }
     }

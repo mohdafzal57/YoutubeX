@@ -34,6 +34,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mak.notex.R
 import com.mak.notex.presentation.auth.AuthState
+import com.mak.notex.presentation.main.common.TOP_LEVEL_DESTINATIONS
 import com.mak.notex.presentation.main.common.YootubeBottomAppBar
 import com.mak.notex.presentation.main.common.YootubeTopAppBar
 
@@ -66,6 +67,12 @@ fun RootNavHost(
             )
         }
     }
+
+    /***
+     * If the global LaunchedEffect triggers just as the BootstrapRoute is finishing its job,
+     * the currentDest might still report as "bootstrap" for a few milliseconds.
+     * Without the check, the global listener might call navigate(NavGraphs.AUTH) a second time,
+     * potentially messing up the backstack or triggering double transitions.*/
 
     // Global logout listener: Navigates to AUTH if authState becomes Unauthenticated
     LaunchedEffect(authState) {

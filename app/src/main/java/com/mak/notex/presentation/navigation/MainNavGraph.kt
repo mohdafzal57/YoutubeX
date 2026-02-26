@@ -1,6 +1,5 @@
 package com.mak.notex.presentation.navigation
 
-import com.mak.notex.presentation.main.subscription.SubscriptionScreen
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,7 +16,7 @@ import com.mak.notex.presentation.main.player.PlayerViewModel
 import com.mak.notex.presentation.main.search.SearchScreen
 import com.mak.notex.presentation.main.settings.SettingsScreen
 import com.mak.notex.presentation.main.social_feed.SocialFeedScreen
-import com.mak.notex.presentation.main.tweet.CreateTweetScreen
+import com.mak.notex.presentation.main.subscription.SubscriptionScreen
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -35,30 +34,24 @@ fun NavGraphBuilder.mainNavGraph(
                     navController.navigate(Screen.Player.createRoute(videoUrl, videoId))
                 },
                 onNavigateToChannel = { username, ownerId ->
-                    navController.navigate(Screen.ChannelDetail.route + "/$username/$ownerId")
+                    // BEST PRACTICE: Use createRoute instead of manual string concatenation
+                    navController.navigate(Screen.ChannelDetail.createRoute(username, ownerId))
                 },
             )
         }
 
         composable(Screen.SocialFeed.route) {
-            SocialFeedScreen(
-                /*onNavigateToChannel = { username, ownerId ->
-                    navController.navigate(Screen.ChannelDetail.route + "/$username/$ownerId")
-                },*/
-            )
+            SocialFeedScreen()
         }
 
         composable(Screen.Search.route) {
             SearchScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onVideoClick = {
-                    videoUrl, videoId ->
+                onBackClick = { navController.popBackStack() },
+                onVideoClick = { videoUrl, videoId ->
                     navController.navigate(Screen.Player.createRoute(videoUrl, videoId))
                 },
                 onNavigateToChannel = { username, ownerId ->
-                    navController.navigate(Screen.ChannelDetail.route + "/$username/$ownerId")
+                    navController.navigate(Screen.ChannelDetail.createRoute(username, ownerId))
                 }
             )
         }
@@ -66,15 +59,16 @@ fun NavGraphBuilder.mainNavGraph(
         composable(Screen.Subscription.route) {
             SubscriptionScreen(
                 onNavigateToChannel = { username, ownerId ->
-                    navController.navigate(Screen.ChannelDetail.route + "/$username/$ownerId")
+                    navController.navigate(Screen.ChannelDetail.createRoute(username, ownerId))
                 }
             )
         }
+
         composable(
-            Screen.ChannelDetail.route + "/{username}/{ownerId}",
+            route = Screen.ChannelDetail.route, // BEST PRACTICE: Route logic is now inside Screen.kt
             arguments = listOf(
-                navArgument("username") { type = NavType.StringType },
-                navArgument("ownerId") { type = NavType.StringType }
+                navArgument(Screen.ARG_USERNAME) { type = NavType.StringType },
+                navArgument(Screen.ARG_OWNER_ID) { type = NavType.StringType }
             )
         ) {
             ChannelScreen(
@@ -94,21 +88,23 @@ fun NavGraphBuilder.mainNavGraph(
         composable(
             route = Screen.Player.route,
             arguments = listOf(
-                navArgument("encodedUrl") { type = NavType.StringType },
-                navArgument("videoId") { type = NavType.StringType }
+                navArgument(Screen.ARG_ENCODED_URL) { type = NavType.StringType },
+                navArgument(Screen.ARG_VIDEO_ID) { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val encodedUrl = backStackEntry.arguments?.getString("encodedUrl") ?: ""
+            // BEST PRACTICE: Use constants for keys to avoid typos
+            val encodedUrl = backStackEntry.arguments?.getString(Screen.ARG_ENCODED_URL) ?: ""
             val url = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
+
             val viewModel = hiltViewModel<PlayerViewModel>()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
             PlayerScreen(
                 videoUrl = url,
                 uiState = uiState,
                 onEvent = viewModel::onEvent,
-            ) {
-                navController.popBackStack()
-            }
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }
