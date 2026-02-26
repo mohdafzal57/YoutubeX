@@ -162,8 +162,3 @@ class UploadActivity : ComponentActivity() {
         }
     }
 }
-
-@Composable
-internal fun A() {
-
-}

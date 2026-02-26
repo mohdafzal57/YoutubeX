@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.BottomAppBarDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -26,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -35,13 +38,14 @@ import androidx.navigation.compose.rememberNavController
 import com.mak.notex.R
 import com.mak.notex.presentation.auth.AuthState
 import com.mak.notex.presentation.main.common.TOP_LEVEL_DESTINATIONS
-import com.mak.notex.presentation.main.common.YootubeBottomAppBar
+import com.mak.notex.presentation.main.common.YTNavigationBar
 import com.mak.notex.presentation.main.common.YootubeTopAppBar
 
 val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
     error("SnackbarHostState not provided")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootNavHost(
     navController: NavHostController = rememberNavController(),
@@ -51,12 +55,14 @@ fun RootNavHost(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
+
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior(
+        canScroll = { currentRoute == Screen.Home.route }
+    )
 
     // Check if we're in main graph
-    val isMainGraph = currentRoute?.let { route ->
-        route in TOP_LEVEL_DESTINATIONS
-    } ?: false
+    val isMainGraph = currentRoute in TOP_LEVEL_DESTINATIONS
 
     val notConnectedMessage = stringResource(R.string.not_connected)
     LaunchedEffect(isOffline) {
@@ -77,6 +83,9 @@ fun RootNavHost(
     // Global logout listener: Navigates to AUTH if authState becomes Unauthenticated
     LaunchedEffect(authState) {
         if (authState is AuthState.Unauthenticated) {
+            // Snapshot-based:
+            // Accessing this property does not trigger recomposition.
+            // This is ideal for event-based logic or one-time checks
             val currentDest = navController.currentDestination?.route
             val isInAuth = navController.currentDestination?.parent?.route == NavGraphs.AUTH
 
@@ -94,6 +103,7 @@ fun RootNavHost(
             color = MaterialTheme.colorScheme.background
         ) {
             Scaffold(
+                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onBackground,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -121,13 +131,17 @@ fun RootNavHost(
                     }
                 },
                 bottomBar = {
+                    LaunchedEffect(currentRoute) {
+                        scrollBehavior.state.heightOffset = 0f
+                    }
                     AnimatedVisibility(
                         visible = isMainGraph,
                         enter = slideInVertically(initialOffsetY = { it }),
                         exit = slideOutVertically(targetOffsetY = { it })
                     ) {
-                        YootubeBottomAppBar(
+                        YTNavigationBar(
                             currentRoute = currentRoute,
+                            scrollBehavior = scrollBehavior,
                             onNavigate = { route ->
                                 navController.navigate(route) {
                                     // Pop up to the start destination to avoid building up a large stack
