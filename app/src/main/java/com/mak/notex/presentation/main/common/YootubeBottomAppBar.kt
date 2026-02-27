@@ -78,7 +78,7 @@ fun YTNavigationBar(
     BottomAppBar(
         modifier = modifier,
         containerColor = YTNavigationDefaults.containerColor(),
-        scrollBehavior = scrollBehavior, // This enables the hide-on-scroll
+        scrollBehavior = scrollBehavior,
         contentPadding = PaddingValues(0.dp) // Remove default padding to let NavigationBar fill it
     ) {
         NavigationBar(
