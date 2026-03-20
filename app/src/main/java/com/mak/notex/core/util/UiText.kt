@@ -1,4 +1,4 @@
-package com.mak.notex.utils
+package com.mak.notex.core.util
 
 import android.content.Context
 import androidx.annotation.StringRes

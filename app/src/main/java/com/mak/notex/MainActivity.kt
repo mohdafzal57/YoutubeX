@@ -5,68 +5,79 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.mak.notex.data.utils.NetworkMonitor
 import com.mak.notex.presentation.auth.AuthState
 import com.mak.notex.presentation.auth.AuthViewModel
 import com.mak.notex.presentation.navigation.RootNavHost
-import com.mak.notex.presentation.ui.theme.NoteXTheme
+import com.mak.notex.presentation.ui.theme.YTTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
-    private val connectivityViewModel: ConnectivityViewModel by viewModels()
+
+    @Inject
+    lateinit var networkMonitor: NetworkMonitor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
-
+        splashScreen.setKeepOnScreenCondition { authViewModel.authState.value.shouldKeepSplashScreen() }
         setContent {
-            NoteXTheme {
-                val authState by authViewModel.authState
-                    .collectAsStateWithLifecycle()
-
-                val isOffline by connectivityViewModel.isOffline
-                    .collectAsStateWithLifecycle()
-
-                LaunchedEffect(authState) {
-                    splashScreen.setKeepOnScreenCondition {
-                        authState is AuthState.Loading
-                    }
-                }
-
+            YTTheme {
+                val appState = rememberYTAppState(networkMonitor)
+                val authState by authViewModel.authState.collectAsStateWithLifecycle()
                 val navController = rememberNavController()
 
                 RootNavHost(
                     navController = navController,
                     authState = authState,
-                    isOffline = isOffline
+                    appState = appState
                 )
             }
         }
     }
 }
 
+@Composable
+fun rememberYTAppState(
+    networkMonitor: NetworkMonitor,
+    coroutineScope: CoroutineScope = rememberCoroutineScope()
+): YTAppState {
+    return remember(networkMonitor, coroutineScope) {
+        YTAppState(
+            networkMonitor = networkMonitor,
+            coroutineScope = coroutineScope
+        )
+    }
+}
 
-
-
-
-
-//                val view = LocalView.current
-//                if (!view.isInEditMode) {
-//                    SideEffect {
-//                        val window = (view.context as Activity).window
-//                        WindowCompat.setDecorFitsSystemWindows(window, false)
-//                        val insetsController = WindowCompat.getInsetsController(window, view)
-//                        insetsController.isAppearanceLightStatusBars = false
-//                        insetsController.isAppearanceLightNavigationBars = false
-//                    }
-//                }
+@Stable
+class YTAppState(networkMonitor: NetworkMonitor, coroutineScope: CoroutineScope) {
+    val isOffline: StateFlow<Boolean> =
+        networkMonitor.isOnline
+            .map(Boolean::not)
+            .stateIn(
+                scope = coroutineScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = false
+            )
+}

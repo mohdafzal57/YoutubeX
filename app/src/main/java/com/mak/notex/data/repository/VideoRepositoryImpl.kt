@@ -14,14 +14,12 @@ import com.mak.notex.data.remote.mapper.toTextRequestBody
 import com.mak.notex.data.remote.mapper.toVideoMultipart
 import com.mak.notex.domain.model.UserVideo
 import com.mak.notex.domain.model.UserVideoRequest
-import com.mak.notex.domain.model.Video
 import com.mak.notex.domain.model.VideoFeed
 import com.mak.notex.domain.model.VideoUploadRequest
 import com.mak.notex.domain.repository.VideoRepository
-import com.mak.notex.utils.NetworkError
-import com.mak.notex.utils.Result
-import com.mak.notex.utils.map
-import com.mak.notex.utils.safeCall
+import com.mak.notex.core.data.util.NetworkError
+import com.mak.notex.core.data.util.Result
+import com.mak.notex.core.data.util.safeCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,10 +28,16 @@ import com.mak.notex.R
 @Composable
 fun YootubeTopAppBar(
     modifier: Modifier = Modifier,
+    scrollBehavior: TopAppBarScrollBehavior? = null,
     onNavigateToSearch: () -> Unit = {}
 ) {
     TopAppBar(
+        scrollBehavior = scrollBehavior,
         modifier = modifier,
+        colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface, // Standard color
+            scrolledContainerColor = MaterialTheme.colorScheme.surface // Keep it the same when scrolled
+        ),
         title = { },
         navigationIcon = {
             YooTubeLogo()
@@ -52,17 +59,15 @@ fun YooTubeLogo(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(R.drawable.topbar_icon),
+            painter = painterResource(R.drawable.yt_ic),
             contentDescription = "YooTube logo",
             modifier = Modifier.size(36.dp)
         )
 
-        Spacer(modifier = Modifier.width(6.dp))
-
         Image(
-            painter = painterResource(R.drawable.youtube_text_ic),
+            painter = painterResource(R.drawable.yt_txt),
             contentDescription = "YooTube text",
-            modifier = Modifier.height(22.dp),
+            modifier = Modifier.height(24.dp),
             colorFilter = ColorFilter.tint(contentColor)
         )
     }

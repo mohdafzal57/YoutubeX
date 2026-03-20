@@ -1,5 +1,7 @@
 package com.mak.notex.utils
 
+import com.mak.notex.core.data.util.NetworkError
+
 fun mapHttpError(code: Int): NetworkError =
     when (code) {
         401 -> NetworkError.UNAUTHORIZED

@@ -1,6 +1,6 @@
 package com.mak.notex.presentation.auth.signin
 
-import com.mak.notex.utils.UiText
+import com.mak.notex.core.util.UiText
 
 data class SignInState(
     val identifier: String = "",

@@ -8,8 +8,8 @@ import com.mak.notex.domain.model.UpdateAccountDetailRequest
 import com.mak.notex.domain.model.User
 import com.mak.notex.domain.repository.UserRepository
 import com.mak.notex.utils.formatDate
-import com.mak.notex.utils.onFailure
-import com.mak.notex.utils.onSuccess
+import com.mak.notex.core.data.util.onFailure
+import com.mak.notex.core.data.util.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

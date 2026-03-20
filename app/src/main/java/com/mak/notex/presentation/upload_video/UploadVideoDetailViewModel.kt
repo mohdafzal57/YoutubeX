@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mak.notex.domain.model.VideoUploadRequest
 import com.mak.notex.domain.repository.VideoRepository
-import com.mak.notex.utils.onFailure
-import com.mak.notex.utils.onSuccess
+import com.mak.notex.core.data.util.onFailure
+import com.mak.notex.core.data.util.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

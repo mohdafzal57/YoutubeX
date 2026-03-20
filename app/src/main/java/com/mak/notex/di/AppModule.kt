@@ -1,5 +1,12 @@
 package com.mak.notex.di
 
+import android.app.ActivityManager
+import android.content.Context
+import coil.ImageLoader
+import coil.decode.VideoFrameDecoder
+import coil.disk.DiskCache
+import coil.key.Keyer
+import coil.memory.MemoryCache
 import com.mak.notex.BuildConfig
 import com.mak.notex.core.di.AuthenticatedClient
 import com.mak.notex.core.di.PublicClient
@@ -10,12 +17,15 @@ import com.mak.notex.data.remote.api.SubscriptionApi
 import com.mak.notex.data.remote.api.TweetApi
 import com.mak.notex.data.remote.api.UserApi
 import com.mak.notex.data.remote.api.VideoApi
-import com.mak.notex.core.network.auth.AuthAuthenticator
-import com.mak.notex.core.network.interceptor.AccessTokenInterceptor
-import com.mak.notex.core.network.interceptor.RefreshTokenInterceptor
+import com.mak.notex.core.data.network.auth.AuthAuthenticator
+import com.mak.notex.core.data.network.interceptor.AccessTokenInterceptor
+import com.mak.notex.core.data.network.interceptor.RefreshTokenInterceptor
+import com.mak.notex.domain.model.LocalVideo
+import com.mak.notex.utils.MediaStoreThumbnailFetcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -26,6 +36,44 @@ import kotlin.jvm.java
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideImageLoader(
+        @ApplicationContext context: Context,
+        factory: MediaStoreThumbnailFetcher.Factory
+    ): ImageLoader {
+        // Dynamic memory budget: safer on low-RAM devices
+        val activityManager =
+            context.getSystemService(ActivityManager::class.java)
+        val appMemoryBytes = activityManager.memoryClass * 1024L * 1024L
+        val coilMemoryPercent = if (appMemoryBytes < 128 * 1024 * 1024) {
+            0.12 // ≤ 2 GB RAM — be conservative
+        } else {
+            0.20 // > 2 GB RAM — standard
+        }
+
+        return ImageLoader.Builder(context)
+            .components {
+                add(factory)                    // handles LocalVideo — fast path
+                add(VideoFrameDecoder.Factory()) // fallback for Uri/URL video sources
+                add(Keyer<LocalVideo> { video, _ -> "video_thumb_${video.id}" })
+            }
+            .crossfade(false) // disable for scroll lists — instant appearance
+            .memoryCache {
+                MemoryCache.Builder(context)
+                    .maxSizePercent(coilMemoryPercent)
+                    .strongReferencesEnabled(true) // survives fast back-scroll
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(context.cacheDir.resolve("video_thumb_cache"))
+                    .maxSizeBytes(150L * 1024 * 1024) // 150 MB fixed floor
+                    .build()
+            }
+            .build()
+    }
 
     @Singleton
     @Provides

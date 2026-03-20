@@ -5,12 +5,12 @@ import com.mak.notex.data.remote.mapper.toDomain
 import com.mak.notex.domain.model.Like
 import com.mak.notex.domain.model.Video
 import com.mak.notex.domain.repository.LikeRepository
-import com.mak.notex.utils.NetworkError
-import com.mak.notex.utils.map
-import com.mak.notex.utils.safeCall
+import com.mak.notex.core.data.util.NetworkError
+import com.mak.notex.core.data.util.map
+import com.mak.notex.core.data.util.safeCall
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.mak.notex.utils.Result
+import com.mak.notex.core.data.util.Result
 import kotlin.collections.map
 
 @Singleton

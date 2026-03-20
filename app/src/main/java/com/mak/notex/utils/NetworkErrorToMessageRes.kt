@@ -2,6 +2,7 @@ package com.mak.notex.utils
 
 import androidx.annotation.StringRes
 import com.mak.notex.R
+import com.mak.notex.core.data.util.NetworkError
 
 @StringRes
 fun NetworkError.asStringRes(): Int {

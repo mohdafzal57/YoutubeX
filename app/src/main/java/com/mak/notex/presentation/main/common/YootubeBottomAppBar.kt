@@ -2,11 +2,14 @@ package com.mak.notex.presentation.main.common
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
@@ -18,11 +21,23 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Subscriptions
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarItem
+import androidx.compose.material3.ShortNavigationBarItemDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -67,29 +82,22 @@ val TOP_LEVEL_DESTINATIONS = mapOf(
     )
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YTNavigationBar(
     modifier: Modifier = Modifier,
     currentRoute: String?,
-    scrollBehavior: BottomAppBarScrollBehavior,
     onNavigate: (String) -> Unit
 ) {
-    BottomAppBar(
+    ShortNavigationBar(
         modifier = modifier,
-        containerColor = YTNavigationDefaults.containerColor(),
-        scrollBehavior = scrollBehavior,
-        contentPadding = PaddingValues(0.dp) // Remove default padding to let NavigationBar fill it
+        containerColor = YTNavigationDefaults.containerColor()
     ) {
-        NavigationBar(
-            containerColor = Color.Transparent,
-            tonalElevation = 0.dp
-        ) {
-            TOP_LEVEL_DESTINATIONS.forEach { (destination, item) ->
-                val isSelected = currentRoute?.startsWith(destination) == true
-                val context = LocalContext.current
-                if (destination == Screen.Short.route) {
-                    NavigationBarItem(
+        TOP_LEVEL_DESTINATIONS.forEach { (destination, item) ->
+            val isSelected = currentRoute?.startsWith(destination) == true
+            val context = LocalContext.current
+            if (destination == Screen.Short.route) {
+                CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                    ShortNavigationBarItem(
                         selected = isSelected,
                         onClick = {
                             val activity = context as? Activity
@@ -131,113 +139,17 @@ fun YTNavigationBar(
                                 )
                             }
                         },
-                        colors = NavigationBarItemDefaults.colors(
+                        label = {},
+                        colors = ShortNavigationBarItemDefaults.colors(
                             selectedIconColor = YTNavigationDefaults.selectedItemColor(),
                             unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
                             selectedTextColor = YTNavigationDefaults.selectedItemColor(),
                             unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
-                            indicatorColor = YTNavigationDefaults.indicatorColor()
-                        )
-                    )
-                } else {
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            onNavigate(destination)
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (isSelected) item.selectedIcon else item.unSelectedIcon,
-                                contentDescription = item.title
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = item.title,
-                                maxLines = 1,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = YTNavigationDefaults.selectedItemColor(),
-                            unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
-                            selectedTextColor = YTNavigationDefaults.selectedItemColor(),
-                            unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
-                            indicatorColor = YTNavigationDefaults.indicatorColor()
                         )
                     )
                 }
-            }
-        }
-    }
-}
-/*
-@Composable
-fun YTNavigationBar(
-    modifier: Modifier = Modifier,
-    currentRoute: String?,
-    onNavigate: (String) -> Unit
-) {
-    NavigationBar(
-        modifier = modifier,
-        containerColor = YTNavigationDefaults.containerColor()
-    ) {
-        TOP_LEVEL_DESTINATIONS.forEach { (destination, item) ->
-            val isSelected = currentRoute?.startsWith(destination) == true
-            val context = LocalContext.current
-            if (destination == Screen.Short.route) {
-                NavigationBarItem(
-                    selected = isSelected,
-                    onClick = {
-                        val activity = context as? Activity
-                        val intent = Intent(context, UploadActivity::class.java)
-                            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-
-                        context.startActivity(intent)
-
-                        activity?.let {
-                            if (Build.VERSION.SDK_INT >= 34) {
-                                it.overrideActivityTransition(
-                                    Activity.OVERRIDE_TRANSITION_OPEN,
-                                    R.anim.slide_up,
-                                    R.anim.stay
-                                )
-                            } else {
-                                @Suppress("DEPRECATION")
-                                it.overridePendingTransition(
-                                    R.anim.slide_up,
-                                    R.anim.stay
-                                )
-                            }
-                        }
-                    },
-                    icon = {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = MaterialTheme.shapes.extraLarge
-                                )
-                                .size(40.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                           Icon(
-                               imageVector = if (isSelected) item.selectedIcon else item.unSelectedIcon,
-                               contentDescription = item.title,
-                               modifier = Modifier.size(36.dp)
-                           )
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = YTNavigationDefaults.selectedItemColor(),
-                        unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
-                        selectedTextColor = YTNavigationDefaults.selectedItemColor(),
-                        unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
-                        indicatorColor = YTNavigationDefaults.indicatorColor()
-                    )
-                )
             } else {
-                NavigationBarItem(
+                ShortNavigationBarItem(
                     selected = isSelected,
                     onClick = {
                         onNavigate(destination)
@@ -255,19 +167,17 @@ fun YTNavigationBar(
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
                         )
                     },
-                    colors = NavigationBarItemDefaults.colors(
+                    colors = ShortNavigationBarItemDefaults.colors(
                         selectedIconColor = YTNavigationDefaults.selectedItemColor(),
                         unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
                         selectedTextColor = YTNavigationDefaults.selectedItemColor(),
                         unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
-                        indicatorColor = YTNavigationDefaults.indicatorColor()
                     )
                 )
             }
         }
     }
 }
-*/
 
 object YTNavigationDefaults {
 
@@ -289,6 +199,24 @@ object YTNavigationDefaults {
     @Composable
     fun indicatorColor(): Color =
         Color.Transparent
+}
+
+@Composable
+fun Modifier.glassEffect(
+    blurRadius: Float = 25f,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+): Modifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    this
+        .graphicsLayer {
+            // Use .asComposeRenderEffect() to bridge Android Graphics to Compose
+            renderEffect = RenderEffect
+                .createBlurEffect(blurRadius, blurRadius, Shader.TileMode.CLAMP)
+                .asComposeRenderEffect()
+        }
+        .background(backgroundColor)
+} else {
+    // Fallback for older devices (just background color, no blur)
+    this.background(backgroundColor)
 }
 
 @Preview

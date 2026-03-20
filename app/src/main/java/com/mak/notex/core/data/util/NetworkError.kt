@@ -1,4 +1,6 @@
-package com.mak.notex.utils
+package com.mak.notex.core.data.util
+
+import com.mak.notex.core.data.util.Error
 
 enum class NetworkError : Error {
     NO_INTERNET,

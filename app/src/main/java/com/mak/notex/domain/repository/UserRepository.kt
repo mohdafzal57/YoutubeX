@@ -2,8 +2,6 @@ package com.mak.notex.domain.repository
 
 import android.net.Uri
 import androidx.paging.PagingData
-import com.mak.notex.data.remote.dto.SignInResponseDto
-import com.mak.notex.data.remote.dto.user.UserDto
 import com.mak.notex.domain.model.ChangePasswordRequest
 import com.mak.notex.domain.model.SignInRequest
 import com.mak.notex.domain.model.SignInResponse
@@ -12,8 +10,8 @@ import com.mak.notex.domain.model.UpdateAccountDetailRequest
 import com.mak.notex.domain.model.User
 import com.mak.notex.domain.model.UserChannel
 import com.mak.notex.domain.model.WatchHistoryItem
-import com.mak.notex.utils.NetworkError
-import com.mak.notex.utils.Result
+import com.mak.notex.core.data.util.NetworkError
+import com.mak.notex.core.data.util.Result
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {

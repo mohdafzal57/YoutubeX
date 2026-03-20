@@ -1,10 +1,10 @@
-package com.mak.notex.core.network.auth
+package com.mak.notex.core.data.network.auth
 
 import com.mak.notex.data.remote.api.RefreshTokenApi
 import com.mak.notex.core.datastore.JwtTokenManager
-import com.mak.notex.utils.onFailure
-import com.mak.notex.utils.onSuccess
-import com.mak.notex.utils.safeCall
+import com.mak.notex.core.data.util.onFailure
+import com.mak.notex.core.data.util.onSuccess
+import com.mak.notex.core.data.util.safeCall
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator

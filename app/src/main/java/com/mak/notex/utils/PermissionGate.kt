@@ -3,6 +3,7 @@ package com.mak.notex.utils
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
@@ -22,7 +23,8 @@ import kotlinx.collections.immutable.persistentListOf
  */
 enum class Permission {
     CAMERA,
-    RECORD_AUDIO
+    RECORD_AUDIO,
+    READ_VIDEO
 }
 
 /**
@@ -66,6 +68,13 @@ fun PermissionGate(
     val requestedPermissions = remember(permissions) {
         permissions.map {
             when (it) {
+                Permission.READ_VIDEO -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Manifest.permission.READ_MEDIA_VIDEO
+                    } else {
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    }
+                }
                 Permission.CAMERA -> Manifest.permission.CAMERA
                 Permission.RECORD_AUDIO -> Manifest.permission.RECORD_AUDIO
             }
@@ -116,6 +125,8 @@ fun PermissionGate(
 private fun prettyName(androidPermission: String): String = when (androidPermission) {
     Manifest.permission.CAMERA -> "Camera"
     Manifest.permission.RECORD_AUDIO -> "Microphone"
+    Manifest.permission.READ_MEDIA_VIDEO -> "Videos"
+    Manifest.permission.READ_EXTERNAL_STORAGE -> "Storage"
     else -> androidPermission.substringAfterLast('.')
         .replace('_', ' ')
         .lowercase()

@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mak.notex.R
-import com.mak.notex.data.utils.ObserveAsEvents
+import com.mak.notex.core.util.ObserveAsEvents
 import com.mak.notex.presentation.main.common.AppTextField
 import com.mak.notex.presentation.main.common.PrimaryButton
 import com.mak.notex.presentation.navigation.LocalSnackbarHostState

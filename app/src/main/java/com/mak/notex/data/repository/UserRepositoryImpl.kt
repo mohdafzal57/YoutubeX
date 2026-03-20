@@ -25,11 +25,11 @@ import com.mak.notex.domain.model.User
 import com.mak.notex.domain.model.UserChannel
 import com.mak.notex.domain.model.WatchHistoryItem
 import com.mak.notex.domain.repository.UserRepository
-import com.mak.notex.utils.NetworkError
-import com.mak.notex.utils.Result
-import com.mak.notex.utils.map
-import com.mak.notex.utils.onSuccess
-import com.mak.notex.utils.safeCall
+import com.mak.notex.core.data.util.NetworkError
+import com.mak.notex.core.data.util.Result
+import com.mak.notex.core.data.util.map
+import com.mak.notex.core.data.util.onSuccess
+import com.mak.notex.core.data.util.safeCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import okhttp3.MediaType.Companion.toMediaType

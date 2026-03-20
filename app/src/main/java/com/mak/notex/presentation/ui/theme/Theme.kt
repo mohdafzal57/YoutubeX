@@ -96,7 +96,7 @@ private val LightColorScheme = lightColorScheme(
 //    )
 //}
 @Composable
-fun NoteXTheme(
+fun YTTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,

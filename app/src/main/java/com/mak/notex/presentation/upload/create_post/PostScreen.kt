@@ -1,4 +1,4 @@
-package com.mak.notex.presentation.upload
+package com.mak.notex.presentation.upload.create_post
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,50 +49,49 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mak.notex.presentation.upload_video.ContentCreationMode
-import com.mak.notex.presentation.upload_video.PostState
-import com.mak.notex.presentation.upload_video.PostVisibility
-import com.mak.notex.presentation.upload_video.UploadViewModel
 
 @Composable
 fun PostScreen(
-    viewModel: UploadViewModel = hiltViewModel(),
+    viewModel: CreatePostViewModel = hiltViewModel(),
     onCloseClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CreatePostContent(
-        postState = uiState.postState,
-        onTextChange = viewModel::updatePostText,
-        onVisibilityChange = viewModel::updatePostVisibility,
+        postState = uiState,
+        onTextChange = viewModel::updateText,
+        onVisibilityChange = viewModel::updateVisibility,
         onPostClick = viewModel::submitPost,
         onCloseClick = onCloseClick,
         modifier = Modifier.fillMaxSize()
     )
 }
 
-private val TextSecondary = Color(0xFF71767B)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePostContent(
-    postState: PostState,
+    postState: PostUiState,
     onTextChange: (String) -> Unit,
     onVisibilityChange: (PostVisibility) -> Unit,
     onPostClick: () -> Unit,
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showVisibilityMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = modifier.fillMaxSize(),
@@ -242,7 +240,7 @@ fun CreatePostContent(
                         onClick = { /* Visibility Toggle Logic */ },
                         shape = RoundedCornerShape(16.dp),
                         color = Color.Transparent,
-                        border = BorderStroke(1.dp, TextSecondary.copy(alpha = 0.5f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)),
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -287,7 +285,7 @@ fun CreatePostContent(
                     Text(
                         "What's happening?",
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 colors = TextFieldDefaults.colors(
@@ -304,5 +302,26 @@ fun CreatePostContent(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
             )
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+fun CreatePostContentPreview() {
+    // Mocking state using remember for the preview
+    var text by remember { mutableStateOf("Working on a new Jetpack Compose feature! 🚀") }
+    var visibility by remember { mutableStateOf(PostVisibility.PUBLIC) }
+
+    MaterialTheme {
+        CreatePostContent(
+            postState = PostUiState(
+                text = text,
+                visibility = visibility,
+            ),
+            onTextChange = { text = it },
+            onVisibilityChange = { visibility = it },
+            onPostClick = { /* Do nothing in preview */ },
+            onCloseClick = { /* Do nothing in preview */ }
+        )
     }
 }

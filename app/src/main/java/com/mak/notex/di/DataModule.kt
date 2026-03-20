@@ -1,15 +1,19 @@
 package com.mak.notex.di
 
 import com.mak.notex.data.repository.LikeRepositoryImpl
+import com.mak.notex.data.repository.LocalMediaRepositoryImpl
 import com.mak.notex.data.repository.SubscriptionRepositoryImpl
 import com.mak.notex.data.repository.UserRepositoryImpl
 import com.mak.notex.data.repository.VideoRepositoryImpl
 import com.mak.notex.data.utils.ConnectivityManagerNetworkMonitor
 import com.mak.notex.data.utils.NetworkMonitor
 import com.mak.notex.domain.repository.LikeRepository
+import com.mak.notex.domain.repository.LocalMediaRepository
 import com.mak.notex.domain.repository.SubscriptionRepository
 import com.mak.notex.domain.repository.UserRepository
 import com.mak.notex.domain.repository.VideoRepository
+import com.mak.notex.utils.CoilMediaPrefetcher
+import com.mak.notex.utils.MediaPrefetcher
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -48,4 +52,16 @@ abstract class DataModule {
     abstract fun bindSubscriptionRepository(
         impl: SubscriptionRepositoryImpl
     ): SubscriptionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLocalMediaRepository(
+        impl: LocalMediaRepositoryImpl
+    ): LocalMediaRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMediaPrefetcher(
+        impl: CoilMediaPrefetcher
+    ): MediaPrefetcher
 }

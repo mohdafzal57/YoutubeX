@@ -6,10 +6,10 @@ import com.mak.notex.data.remote.mapper.toDomain
 import com.mak.notex.domain.model.Subscription
 import com.mak.notex.domain.model.SubscriptionProfile
 import com.mak.notex.domain.repository.SubscriptionRepository
-import com.mak.notex.utils.NetworkError
-import com.mak.notex.utils.Result
-import com.mak.notex.utils.map
-import com.mak.notex.utils.safeCall
+import com.mak.notex.core.data.util.NetworkError
+import com.mak.notex.core.data.util.Result
+import com.mak.notex.core.data.util.map
+import com.mak.notex.core.data.util.safeCall
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -1,39 +1,65 @@
 package com.mak.notex.presentation.main.social_feed
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.mak.notex.presentation.ui.theme.ColorLike
 
 // ─────────────────────────────────────────────
 // Design Tokens
 // ─────────────────────────────────────────────
 
-private val ColorBackground    = Color(0xFF0F0F0F)
-private val ColorSurface       = Color(0xFF121212)
-private val ColorAccent        = Color(0xFF1D9BF0)
-private val ColorSecondaryText = Color(0xFF71767B)
-private val ColorDivider       = Color(0xFF1F1F1F)
-private val ColorLike          = Color(0xFFF91880)
-
-private val Spacing4  =  4.dp
-private val Spacing8  =  8.dp
+private val Spacing4 = 4.dp
+private val Spacing8 = 8.dp
 private val Spacing12 = 12.dp
 private val Spacing16 = 16.dp
 
@@ -41,25 +67,13 @@ private val Spacing16 = 16.dp
 // UI Model
 // ─────────────────────────────────────────────
 
-@Stable
-data class Post(
-    val id: String,
-    val avatarUrl: String,
-    val username: String,
-    val handle: String,
-    val timestamp: String,
-    val body: String,
-    val imageUrl: String? = null,
-    val likeCount: Int = 0,
-    val commentCount: Int = 0,
-    val shareCount: Int = 0,
-)
+
 
 // ─────────────────────────────────────────────
 // Sample Data
 // ─────────────────────────────────────────────
 
-private val samplePosts = listOf(
+val samplePosts = listOf(
     Post(
         id = "1",
         avatarUrl = "https://i.pravatar.cc/150?img=1",
@@ -131,129 +145,36 @@ private val samplePosts = listOf(
     ),
 )
 
-// ─────────────────────────────────────────────
-// Theme
-// ─────────────────────────────────────────────
-
-private val FeedColorScheme = darkColorScheme(
-    background    = ColorBackground,
-    surface       = ColorSurface,
-    primary       = ColorAccent,
-    onBackground  = Color(0xFFE7E9EA),
-    onSurface     = Color(0xFFE7E9EA),
-    surfaceVariant = ColorSurface,
-)
-
-@Composable
-fun SocialFeedTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = FeedColorScheme,
-        content = content,
-    )
-}
 
 // ─────────────────────────────────────────────
 // Root Screen
 // ─────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialFeedScreen(
-    posts: List<Post> = samplePosts,
+    viewModel: SocialFeedViewModel = hiltViewModel()
 ) {
-    SocialFeedTheme {
-        val likedIds = remember { mutableStateMapOf<String, Boolean>() }
-        val likeCounts = remember {
-            mutableStateMapOf<String, Int>().also { map ->
-                posts.forEach { map[it.id] = it.likeCount }
-            }
-        }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-        Scaffold(
-            /*topBar = { FeedTopBar() },*/
-            containerColor = ColorBackground,
-        ) { innerPadding ->
-            FeedList(
-                posts = posts,
-                likedIds = likedIds,
-                likeCounts = likeCounts,
-                contentPadding = innerPadding,
-                onLikeToggle = { post ->
-                    val wasLiked = likedIds[post.id] == true
-                    likedIds[post.id] = !wasLiked
-                    likeCounts[post.id] = post.likeCount + if (!wasLiked) 1 else 0
-                },
-            )
-        }
-    }
-}
-
-// ─────────────────────────────────────────────
-// Top App Bar
-// ─────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun FeedTopBar() {
-    TopAppBar(
-        title = {
-            Text(
-                text = "Stream",
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                letterSpacing = (-0.5).sp,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        },
-        actions = {
-            IconButton(onClick = {}) {
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notifications",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = ColorBackground,
-            scrolledContainerColor = ColorBackground,
-        ),
-        windowInsets = WindowInsets.statusBars,
-    )
-}
-
-// ─────────────────────────────────────────────
-// Feed List
-// ─────────────────────────────────────────────
-
-@Composable
-private fun FeedList(
-    posts: List<Post>,
-    likedIds: Map<String, Boolean>,
-    likeCounts: Map<String, Int>,
-    contentPadding: PaddingValues,
-    onLikeToggle: (Post) -> Unit,
-) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ColorBackground),
-        contentPadding = contentPadding,
+        modifier = Modifier.fillMaxSize()
     ) {
         items(
-            items = posts,
+            items = uiState.posts,
             key = { it.id },
+            contentType = { "post" }
         ) { post ->
+
+            val isLiked = post.id in uiState.likedIds
+
             PostItem(
                 post = post,
-                isLiked = likedIds[post.id] == true,
-                displayLikeCount = likeCounts[post.id] ?: post.likeCount,
-                onLikeToggle = { onLikeToggle(post) },
+                isLiked = isLiked,
+                onLikeToggle = { viewModel.onLikeToggle(post.id) }
             )
         }
     }
 }
-
 // ─────────────────────────────────────────────
 // Post Item
 // ─────────────────────────────────────────────
@@ -262,238 +183,220 @@ private fun FeedList(
 fun PostItem(
     post: Post,
     isLiked: Boolean,
-    displayLikeCount: Int,
     onLikeToggle: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    val likeCount = post.likeCount + if (isLiked) 1 else 0
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Spacing16, vertical = Spacing12),
-            horizontalArrangement = Arrangement.spacedBy(Spacing12),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Avatar
-            PostAvatar(avatarUrl = post.avatarUrl)
 
-            // Content column
+            PostAvatar(post.avatarUrl)
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing4),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                PostHeader(
-                    username = post.username,
-                    timestamp = post.timestamp,
-                )
-                PostBody(
-                    body = post.body,
-                    imageUrl = post.imageUrl,
-                )
+
+                PostHeader(post.username, post.timestamp)
+
+                PostBody(post.body, post.imageUrl)
+
                 PostActions(
                     isLiked = isLiked,
-                    likeCount = displayLikeCount,
+                    likeCount = likeCount,
                     commentCount = post.commentCount,
                     shareCount = post.shareCount,
-                    onLikeToggle = onLikeToggle,
+                    onLikeToggle = onLikeToggle
                 )
             }
         }
 
         HorizontalDivider(
-            color = ColorDivider,
             thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
         )
     }
 }
 
-// ─────────────────────────────────────────────
-// Avatar
-// ─────────────────────────────────────────────
-
 @Composable
-private fun PostAvatar(avatarUrl: String) {
+fun PostAvatar(url: String) {
     AsyncImage(
-        model = avatarUrl,
-        contentDescription = "Avatar",
+        model = url,
+        contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = Modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(ColorSurface),
     )
 }
 
-// ─────────────────────────────────────────────
-// Header
-// ─────────────────────────────────────────────
 
 @Composable
-private fun PostHeader(
+fun PostHeader(
     username: String,
-    timestamp: String,
+    timestamp: String
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing8),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             text = username,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            letterSpacing = (-0.3).sp,
-            modifier = Modifier.weight(1f, fill = false),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f, fill = false)
         )
-        Text(
-            text = "·",
-            fontSize = 13.sp,
-            color = ColorSecondaryText,
-        )
-        Text(
-            text = timestamp,
-            fontSize = 13.sp,
-            color = ColorSecondaryText,
-        )
+
+        Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(timestamp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
-// ─────────────────────────────────────────────
-// Body + Optional Image
-// ─────────────────────────────────────────────
 
 @Composable
-private fun PostBody(
+fun PostBody(
     body: String,
-    imageUrl: String?,
+    imageUrl: String?
 ) {
     Text(
         text = body,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onBackground,
-        lineHeight = 22.sp,
+        style = MaterialTheme.typography.bodyLarge
     )
 
     if (imageUrl != null) {
-        Spacer(modifier = Modifier.height(Spacing8))
+        Spacer(Modifier.height(8.dp))
+
         AsyncImage(
             model = imageUrl,
-            contentDescription = "Post image",
+            contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(16.dp))
-                .background(ColorSurface),
         )
     }
 }
 
-// ─────────────────────────────────────────────
-// Action Row
-// ─────────────────────────────────────────────
 
 @Composable
-private fun PostActions(
+fun PostActions(
     isLiked: Boolean,
     likeCount: Int,
     commentCount: Int,
     shareCount: Int,
     onLikeToggle: () -> Unit,
 ) {
+    val tint = if (isLiked) ColorLike
+    else MaterialTheme.colorScheme.onSurfaceVariant
+
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = Spacing4),
-        horizontalArrangement = Arrangement.spacedBy(Spacing4),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Like
+
         ActionButton(
+            imageVector = if (isLiked)
+                Icons.Filled.Favorite
+            else
+                Icons.Outlined.FavoriteBorder,
             count = likeCount,
-            contentDescription = if (isLiked) "Unlike" else "Like",
-            tint = if (isLiked) ColorLike else ColorSecondaryText,
-            icon = {
-                Icon(
-                    imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = null,
-                    tint = if (isLiked) ColorLike else ColorSecondaryText,
-                    modifier = Modifier.size(20.dp),
-                )
-            },
-            onClick = onLikeToggle,
+            tint = tint,
+            onClick = onLikeToggle
         )
 
-        // Comment
         ActionButton(
+            imageVector = Icons.Outlined.ChatBubbleOutline,
             count = commentCount,
-            contentDescription = "Comment",
-            tint = ColorSecondaryText,
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.ChatBubbleOutline,
-                    contentDescription = null,
-                    tint = ColorSecondaryText,
-                    modifier = Modifier.size(20.dp),
-                )
-            },
-            onClick = {},
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            onClick = {}
         )
 
-        // Share
         ActionButton(
+            imageVector = Icons.Outlined.Share,
             count = shareCount,
-            contentDescription = "Share",
-            tint = ColorSecondaryText,
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Share,
-                    contentDescription = null,
-                    tint = ColorSecondaryText,
-                    modifier = Modifier.size(20.dp),
-                )
-            },
-            onClick = {},
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            onClick = {}
         )
     }
 }
 
 @Composable
-private fun ActionButton(
+fun ActionButton(
+    imageVector: ImageVector,
     count: Int,
-    contentDescription: String,
     tint: Color,
-    icon: @Composable () -> Unit,
     onClick: () -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.padding(end = Spacing8),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         IconButton(
             onClick = onClick,
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(32.dp)
         ) {
-            icon()
+            Icon(
+                imageVector = imageVector,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(20.dp)
+            )
         }
+
         if (count > 0) {
             Text(
                 text = formatCount(count),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = tint,
-                letterSpacing = (-0.1).sp,
+                style = MaterialTheme.typography.bodySmall,
+                color = tint
             )
         }
     }
 }
-
 // ─────────────────────────────────────────────
 // Utilities
 // ─────────────────────────────────────────────
 
 private fun formatCount(count: Int): String = when {
     count >= 1_000_000 -> "%.1fM".format(count / 1_000_000.0).trimEnd('0').trimEnd('.')
-    count >= 1_000     -> "%.1fk".format(count / 1_000.0).trimEnd('0').trimEnd('.')
-    else               -> count.toString()
+    count >= 1_000 -> "%.1fk".format(count / 1_000.0).trimEnd('0').trimEnd('.')
+    else -> count.toString()
 }
+// ─────────────────────────────────────────────
+// Top App Bar
+// ─────────────────────────────────────────────
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun FeedTopBar() {
+        TopAppBar(
+            title = {
+                Text(
+                    text = "Stream",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    letterSpacing = (-0.5).sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            actions = {
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Outlined.Notifications,
+                        contentDescription = "Notifications",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background,
+            ),
+            windowInsets = WindowInsets.statusBars,
+        )
+    }

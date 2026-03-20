@@ -1,4 +1,4 @@
-package com.mak.notex.core.network.interceptor
+package com.mak.notex.core.data.network.interceptor
 
 import com.mak.notex.core.datastore.JwtTokenManager
 import kotlinx.coroutines.flow.first
@@ -7,7 +7,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
 
-class AccessTokenInterceptor @Inject constructor(
+class RefreshTokenInterceptor @Inject constructor(
     private val tokenManager: JwtTokenManager
 ) : Interceptor {
     companion object {
@@ -17,7 +17,7 @@ class AccessTokenInterceptor @Inject constructor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = runBlocking {
-            tokenManager.getAccessJwt().first()
+            tokenManager.getRefreshJwt().first()
         }
         val request = chain.request().newBuilder()
         if (token != null) {
@@ -26,6 +26,3 @@ class AccessTokenInterceptor @Inject constructor(
         return chain.proceed(request.build())
     }
 }
-/*the interceptor already runs on a background thread,
-using runBlocking to wait for a fast,
-local I/O operation like reading a token is an acceptable trade-off.*/

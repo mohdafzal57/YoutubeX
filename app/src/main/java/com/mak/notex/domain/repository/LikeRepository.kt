@@ -2,8 +2,8 @@ package com.mak.notex.domain.repository
 
 import com.mak.notex.domain.model.Like
 import com.mak.notex.domain.model.Video
-import com.mak.notex.utils.NetworkError
-import com.mak.notex.utils.Result
+import com.mak.notex.core.data.util.NetworkError
+import com.mak.notex.core.data.util.Result
 
 interface LikeRepository {
 

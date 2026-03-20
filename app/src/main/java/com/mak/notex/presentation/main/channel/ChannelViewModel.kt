@@ -11,9 +11,9 @@ import com.mak.notex.domain.model.UserVideoRequest
 import com.mak.notex.domain.repository.SubscriptionRepository
 import com.mak.notex.domain.repository.UserRepository
 import com.mak.notex.domain.repository.VideoRepository
-import com.mak.notex.utils.NetworkError
-import com.mak.notex.utils.onFailure
-import com.mak.notex.utils.onSuccess
+import com.mak.notex.core.data.util.NetworkError
+import com.mak.notex.core.data.util.onFailure
+import com.mak.notex.core.data.util.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi

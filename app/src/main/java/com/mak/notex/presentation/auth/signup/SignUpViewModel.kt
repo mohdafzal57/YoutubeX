@@ -8,10 +8,10 @@ import com.mak.notex.domain.repository.UserRepository
 import com.mak.notex.presentation.auth.signup.SignUpContract.Effect
 import com.mak.notex.presentation.auth.signup.SignUpContract.Event
 import com.mak.notex.presentation.auth.signup.SignUpContract.State
-import com.mak.notex.utils.UiText
+import com.mak.notex.core.util.UiText
 import com.mak.notex.utils.asStringRes
-import com.mak.notex.utils.onFailure
-import com.mak.notex.utils.onSuccess
+import com.mak.notex.core.data.util.onFailure
+import com.mak.notex.core.data.util.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -2,7 +2,7 @@ package com.mak.notex.presentation.auth.signup
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable
-import com.mak.notex.utils.UiText
+import com.mak.notex.core.util.UiText
 
 /**
  * MVI Contract for SignUp feature

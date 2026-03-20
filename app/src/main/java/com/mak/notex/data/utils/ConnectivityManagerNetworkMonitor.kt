@@ -2,9 +2,11 @@ package com.mak.notex.data.utils
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.ConnectivityManager.NetworkCallback
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.util.Log
 import androidx.core.content.getSystemService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -28,17 +30,22 @@ enum class YTDispatchers {
 
 internal class ConnectivityManagerNetworkMonitor @Inject constructor(
     @ApplicationContext private val context: Context,
-    @Dispatcher(YTDispatchers.IO) private val ioDispatcher: CoroutineDispatcher
+    @Dispatcher(YTDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : NetworkMonitor {
     override val isOnline: Flow<Boolean> = callbackFlow {
+
         val connectivityManager = context.getSystemService<ConnectivityManager>()
         if (connectivityManager == null) {
-            this.channel.trySend(false)
-            this.channel.close()
+            channel.trySend(false)
+            channel.close()
             return@callbackFlow
         }
 
-        val callback = object : ConnectivityManager.NetworkCallback() {
+        /**
+         * The callback's methods are invoked on changes to *any* network matching the [NetworkRequest],
+         * not just the active network. So we can simply track the presence (or absence) of such [Network].
+         */
+        val callback = object : NetworkCallback() {
 
             private val networks = mutableSetOf<Network>()
 
@@ -53,11 +60,17 @@ internal class ConnectivityManagerNetworkMonitor @Inject constructor(
             }
         }
 
+
         val request = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
+        Log.w("NetworkMonitor", "registerNetworkCallback called from:\n${Thread.currentThread().stackTrace.joinToString("\n")}")
         connectivityManager.registerNetworkCallback(request, callback)
 
+
+        /**
+         * Sends the latest connectivity status to the underlying channel.
+         */
         channel.trySend(connectivityManager.isCurrentlyConnected())
 
         awaitClose {
@@ -68,8 +81,7 @@ internal class ConnectivityManagerNetworkMonitor @Inject constructor(
         .conflate()
 
     private fun ConnectivityManager.isCurrentlyConnected(): Boolean {
-        val networkCapabilities = getNetworkCapabilities(this.activeNetwork) ?: return false
+        val networkCapabilities = getNetworkCapabilities(activeNetwork) ?: return false
         return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
-
 }

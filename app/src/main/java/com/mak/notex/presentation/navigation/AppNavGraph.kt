@@ -20,6 +20,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -30,11 +32,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.mak.notex.YTAppState
 import com.mak.notex.R
 import com.mak.notex.presentation.auth.AuthState
 import com.mak.notex.presentation.main.common.TOP_LEVEL_DESTINATIONS
@@ -50,19 +54,17 @@ val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
 fun RootNavHost(
     navController: NavHostController = rememberNavController(),
     authState: AuthState,
-    isOffline: Boolean
+    appState: YTAppState
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
-
-    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior(
-        canScroll = { currentRoute == Screen.Home.route }
-    )
+    val currentRoute = navBackStackEntry?.destination?.route
 
     // Check if we're in main graph
     val isMainGraph = currentRoute in TOP_LEVEL_DESTINATIONS
+
+    val isOffline by appState.isOffline.collectAsStateWithLifecycle()
 
     val notConnectedMessage = stringResource(R.string.not_connected)
     LaunchedEffect(isOffline) {
@@ -97,6 +99,16 @@ fun RootNavHost(
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+        canScroll = { currentRoute == Screen.Home.route || currentRoute == Screen.SocialFeed.route }
+    )
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != Screen.Home.route) {
+            scrollBehavior.state.heightOffset = 0f
+            scrollBehavior.state.contentOffset = 0f
+        }
+    }
+
     CompositionLocalProvider(LocalSnackbarHostState provides snackbarHostState) {
         Surface(
             contentColor = MaterialTheme.colorScheme.onBackground,
@@ -124,6 +136,7 @@ fun RootNavHost(
                         exit = slideOutVertically(targetOffsetY = { -it })
                     ) {
                         YootubeTopAppBar(
+                            scrollBehavior = scrollBehavior,
                             onNavigateToSearch = {
                                 navController.navigate(Screen.Search.route)
                             }
@@ -131,9 +144,6 @@ fun RootNavHost(
                     }
                 },
                 bottomBar = {
-                    LaunchedEffect(currentRoute) {
-                        scrollBehavior.state.heightOffset = 0f
-                    }
                     AnimatedVisibility(
                         visible = isMainGraph,
                         enter = slideInVertically(initialOffsetY = { it }),
@@ -141,7 +151,6 @@ fun RootNavHost(
                     ) {
                         YTNavigationBar(
                             currentRoute = currentRoute,
-                            scrollBehavior = scrollBehavior,
                             onNavigate = { route ->
                                 navController.navigate(route) {
                                     // Pop up to the start destination to avoid building up a large stack

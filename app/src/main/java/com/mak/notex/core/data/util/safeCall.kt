@@ -1,14 +1,11 @@
-package com.mak.notex.utils
+package com.mak.notex.core.data.util
 
 import com.google.gson.JsonSyntaxException
 import com.mak.notex.data.remote.dto.ApiResponse
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.serialization.SerializationException
+import com.mak.notex.utils.mapHttpError
 import retrofit2.HttpException
 import retrofit2.Response
 import java.io.IOException
-import java.nio.channels.UnresolvedAddressException
 import kotlin.coroutines.cancellation.CancellationException
 
 

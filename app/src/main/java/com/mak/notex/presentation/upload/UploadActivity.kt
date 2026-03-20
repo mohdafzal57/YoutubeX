@@ -1,6 +1,5 @@
 package com.mak.notex.presentation.upload
 
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,11 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,8 +33,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mak.notex.R
 import com.mak.notex.presentation.navigation.Screen
+import com.mak.notex.presentation.upload.create_post.PostScreen
 import com.mak.notex.presentation.upload.ui.theme.NoteXTheme
-import com.mak.notex.presentation.upload_video.ContentCreationMode
+import com.mak.notex.presentation.upload.video_picker.VideoPickerScreen
 import com.mak.notex.presentation.upload_video.ModeSelector
 import com.mak.notex.presentation.upload_video.UploadVideoDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -123,7 +121,12 @@ class UploadActivity : ComponentActivity() {
                         }
 
                         composable(route = Screen.Video.route) {
-                            VideoScreen(onCloseClick = { finish() })
+                            VideoPickerScreen(
+                                onCloseClick = { finish() },
+                                onVideoClick = { uri ->
+                                    navController.navigate(Screen.UploadVideoDetail.createRoute(uri.toString()))
+                                }
+                            )
                         }
 
                         composable(route = Screen.Post.route) {
@@ -160,5 +163,15 @@ class UploadActivity : ComponentActivity() {
             @Suppress("DEPRECATION")
             overridePendingTransition(R.anim.stay, R.anim.slide_down)
         }
+    }
+}
+
+sealed class ContentCreationMode(val title: String) {
+    object Video : ContentCreationMode("video")
+    object Short : ContentCreationMode("short")
+    object Post : ContentCreationMode("post")
+
+    companion object {
+        val allModes get() = listOf(Video, Short, Post)
     }
 }
