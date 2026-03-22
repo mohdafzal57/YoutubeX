@@ -41,7 +41,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
     override suspend fun getUserSubscribedChannels():
             Result<List<SubscriptionProfile>, NetworkError> {
         val userId =
-            tokenManager.getUserId().first() ?: return Result.Error(NetworkError.UNAUTHORIZED)
+            tokenManager.session.first().id ?: return Result.Error(NetworkError.UNAUTHORIZED)
         return safeCall {
             api.getUserSubscribedChannels(userId)
         }.map { list ->

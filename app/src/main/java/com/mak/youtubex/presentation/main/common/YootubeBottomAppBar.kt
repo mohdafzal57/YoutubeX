@@ -1,13 +1,20 @@
 package com.mak.youtubex.presentation.main.common
 
+import android.R.attr.onClick
 import android.app.Activity
 import android.content.Intent
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
@@ -30,15 +37,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.mak.youtubex.R
 import com.mak.youtubex.presentation.navigation.Screen
 import com.mak.youtubex.presentation.upload.UploadActivity
@@ -81,7 +94,8 @@ val TOP_LEVEL_DESTINATIONS = mapOf(
 fun YTNavigationBar(
     modifier: Modifier = Modifier,
     currentRoute: String?,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    userAvatar: String?,
 ) {
     ShortNavigationBar(
         modifier = modifier,
@@ -118,21 +132,12 @@ fun YTNavigationBar(
                             }
                         },
                         icon = {
-                            Box(
+                            AddButton(
                                 modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        shape = MaterialTheme.shapes.extraLarge
-                                    )
                                     .size(40.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = if (isSelected) item.selectedIcon else item.unSelectedIcon,
-                                    contentDescription = item.title,
-                                    modifier = Modifier.size(36.dp)
-                                )
-                            }
+                                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                                iconColor = MaterialTheme.colorScheme.onBackground
+                            )
                         },
                         label = {},
                         colors = ShortNavigationBarItemDefaults.colors(
@@ -140,6 +145,7 @@ fun YTNavigationBar(
                             unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
                             selectedTextColor = YTNavigationDefaults.selectedItemColor(),
                             unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
+                            selectedIndicatorColor = Color.Transparent
                         )
                     )
                 }
@@ -150,10 +156,36 @@ fun YTNavigationBar(
                         onNavigate(destination)
                     },
                     icon = {
-                        Icon(
-                            imageVector = if (isSelected) item.selectedIcon else item.unSelectedIcon,
-                            contentDescription = item.title
-                        )
+                        if (item.title == "You") {
+                            AsyncImage(
+                                model = userAvatar,
+                                contentDescription = "user_avatar",
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .size(24.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        width = 2.dp,
+                                        color = if (isSelected) Color.Black else Color.Transparent,
+                                        CircleShape
+                                    )
+                                    .border(
+                                        width = 3.dp,
+                                        color = if (isSelected) Color.White else Color.Transparent,
+                                        CircleShape
+                                    ),
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (isSelected) item.selectedIcon else item.unSelectedIcon,
+                                contentDescription = item.title
+                            )
+                        }
                     },
                     label = {
                         Text(
@@ -167,6 +199,7 @@ fun YTNavigationBar(
                         unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
                         selectedTextColor = YTNavigationDefaults.selectedItemColor(),
                         unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
+                        selectedIndicatorColor = Color.Transparent
                     )
                 )
             }
@@ -221,4 +254,77 @@ private fun YTNavigationBarPreview() {
         currentRoute = Screen.Home.route,
         onNavigate = {}
     )*/
+}
+@Composable
+fun AddButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
+    iconColor: Color = Color.White
+) {
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        // Custom "+" using Canvas (no drawable, no material icon)
+        Canvas(modifier = Modifier.size(24.dp)) {
+            val strokeWidth = size.minDimension * 0.15f
+
+            // Horizontal line
+            drawLine(
+                color = iconColor,
+                start = Offset(0f, size.height / 2),
+                end = Offset(size.width, size.height / 2),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round
+            )
+
+            // Vertical line
+            drawLine(
+                color = iconColor,
+                start = Offset(size.width / 2, 0f),
+                end = Offset(size.width / 2, size.height),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round
+            )
+        }
+    }
+}
+
+@Composable
+fun AddButton(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
+    iconColor: Color = Color.White
+) {
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(18.dp)) {
+            val strokeWidth = size.minDimension * 0.15f
+
+            drawLine(
+                color = iconColor,
+                start = Offset(0f, size.height / 2),
+                end = Offset(size.width, size.height / 2),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round
+            )
+
+            drawLine(
+                color = iconColor,
+                start = Offset(size.width / 2, 0f),
+                end = Offset(size.width / 2, size.height),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round
+            )
+        }
+    }
 }

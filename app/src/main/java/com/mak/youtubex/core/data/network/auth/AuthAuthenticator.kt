@@ -14,7 +14,7 @@ import okhttp3.Route
 import javax.inject.Inject
 
 class AuthAuthenticator @Inject constructor(
-    private val jwtTokenManager: JwtTokenManager,
+    private val tokenManager: JwtTokenManager,
     private val refreshTokenApi: RefreshTokenApi,
 ) : Authenticator {
 
@@ -25,11 +25,12 @@ class AuthAuthenticator @Inject constructor(
             return null
         }
         val currentToken = runBlocking {
-            jwtTokenManager.getAccessJwt().first()
+            tokenManager.session.first().accessToken
         }
+
         synchronized(this) {
             val newToken = runBlocking {
-                jwtTokenManager.getAccessJwt().first()
+                tokenManager.session.first().accessToken
             }
             var token: String? = null
             if (currentToken != newToken) {
@@ -40,13 +41,15 @@ class AuthAuthenticator @Inject constructor(
                 }
                 newSessionResponse.onSuccess { response ->
                     runBlocking {
-                        jwtTokenManager.saveAccessJwt(response.accessToken)
-                        jwtTokenManager.saveRefreshJwt(response.refreshToken)
+                        tokenManager.updateTokens(
+                            accessToken = response.accessToken,
+                            refreshToken = response.refreshToken
+                        )
                     }
                     token = response.accessToken
                 }
                 newSessionResponse.onFailure {
-                    runBlocking { jwtTokenManager.clearAllTokens() } // log user out
+                    runBlocking { tokenManager.clearSession() }
                     token = null
                 }
             }
@@ -56,7 +59,7 @@ class AuthAuthenticator @Inject constructor(
                     .header(RETRY_COUNT, "${retryCount + 1}")
                     .build()
             } else {
-                runBlocking { jwtTokenManager.clearAllTokens() } // log user out
+                runBlocking { tokenManager.clearSession() }
                 null
             }
         }
@@ -76,13 +79,13 @@ fun refreshToken(currentToken: String?, newToken: String?): String? {
         if (newSessionResponse.isSuccessful && newSessionResponse.body() != null) {
             newSessionResponse.body()?.data?.let { tokenData ->
                 runBlocking {
-                    jwtTokenManager.saveAccessJwt(tokenData.accessToken)
-                    jwtTokenManager.saveRefreshJwt(tokenData.refreshToken)
+                    tokenManager.saveAccessJwt(tokenData.accessToken)
+                    tokenManager.saveRefreshJwt(tokenData.refreshToken)
                 }
                 tokenData.accessToken
             }
         } else {
-            runBlocking { jwtTokenManager.clearAllTokens() } // log user out
+            runBlocking { tokenManager.clearAllTokens() } // log user out
             null
         }
     }
@@ -92,7 +95,7 @@ fun refreshToken(currentToken: String?, newToken: String?): String? {
 
 /*
 class AuthAuthenticator @Inject constructor(
-    private val jwtTokenManager: JwtTokenManager,
+    private val tokenManager: JwtTokenManager,
     private val refreshTokenApi: RefreshTokenApi,
 ) : Authenticator {
 
@@ -107,12 +110,12 @@ class AuthAuthenticator @Inject constructor(
 
         // 2. Run everything in ONE runBlocking context
         return runBlocking {
-            val currentToken = jwtTokenManager.getAccessJwt().first()
+            val currentToken = tokenManager.getAccessJwt().first()
 
             // 3. Use Mutex to handle the "Thundering Herd"
             mutex.withLock {
                 // Double-check: Did someone else refresh while we were waiting?
-                val freshToken = jwtTokenManager.getAccessJwt().first()
+                val freshToken = tokenManager.getAccessJwt().first()
 
                 if (currentToken != freshToken) {
                     // Yes, someone refreshed it! Just use the new token.
@@ -122,12 +125,12 @@ class AuthAuthenticator @Inject constructor(
                     val refreshResponse = safeCall { refreshTokenApi.refreshToken() }
 
                     refreshResponse.getOrNull()?.let { tokenData ->
-                        jwtTokenManager.saveAccessJwt(tokenData.accessToken)
-                        jwtTokenManager.saveRefreshJwt(tokenData.refreshToken)
+                        tokenManager.saveAccessJwt(tokenData.accessToken)
+                        tokenManager.saveRefreshJwt(tokenData.refreshToken)
                         rewriteRequest(response.request, tokenData.accessToken)
                     } ?: run {
                         // Refresh failed
-                        jwtTokenManager.clearAllTokens()
+                        tokenManager.clearAllTokens()
                         null
                     }
                 }
@@ -158,3 +161,72 @@ class AuthAuthenticator @Inject constructor(
     }
 }
 */
+
+/*
+* @Singleton
+class AuthAuthenticator @Inject constructor(
+    private val tokenManager: JwtTokenManager,
+    private val refreshTokenApi: RefreshTokenApi,
+) : Authenticator {
+
+    private val lock = Any()
+
+    override fun authenticate(route: Route?, response: Response): Request? {
+
+        val retryCount = response.request.header(RETRY_COUNT)?.toIntOrNull() ?: 0
+        if (retryCount >= MAX_RETRIES) return null
+
+        synchronized(lock) {
+
+            val session = runBlocking {
+                tokenManager.session.first()
+            }
+
+            val currentAccessToken = session.accessToken ?: return null
+            val currentRefreshToken = session.refreshToken ?: return null
+
+            // If request already used updated token → avoid infinite loop
+            val requestToken = response.request.header(HEADER_AUTHORIZATION)
+            if (requestToken == "$TOKEN_TYPE $currentAccessToken") {
+                // Need refresh
+                val result = runBlocking {
+                    safeCall { refreshTokenApi.refreshToken(currentRefreshToken) }
+                }
+
+                return result.fold(
+                    onSuccess = { res ->
+
+                        runBlocking {
+                            tokenManager.updateTokens(
+                                accessToken = res.accessToken,
+                                refreshToken = res.refreshToken
+                            )
+                        }
+
+                        response.request.newBuilder()
+                            .header(HEADER_AUTHORIZATION, "$TOKEN_TYPE ${res.accessToken}")
+                            .header(RETRY_COUNT, "${retryCount + 1}")
+                            .build()
+                    },
+                    onFailure = {
+                        runBlocking { tokenManager.clearSession() }
+                        null
+                    }
+                )
+            }
+
+            // Token already refreshed by another request → reuse
+            return response.request.newBuilder()
+                .header(HEADER_AUTHORIZATION, "$TOKEN_TYPE $currentAccessToken")
+                .header(RETRY_COUNT, "${retryCount + 1}")
+                .build()
+        }
+    }
+
+    companion object {
+        const val HEADER_AUTHORIZATION = "Authorization"
+        const val TOKEN_TYPE = "Bearer"
+        const val RETRY_COUNT = "Retry-Count"
+        const val MAX_RETRIES = 2
+    }
+}*/

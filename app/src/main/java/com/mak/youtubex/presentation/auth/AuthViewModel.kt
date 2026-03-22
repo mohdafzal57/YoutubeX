@@ -19,12 +19,12 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     val authState: StateFlow<AuthState> =
-        tokenManager.getAccessJwt()
-            .map { token ->
-                if (token.isNullOrBlank()) {
-                    Unauthenticated
+        tokenManager.session
+            .map { userSession ->
+                if (userSession.isLoggedIn) {
+                    Authenticated(userSession.avatar)
                 } else {
-                    Authenticated
+                    Unauthenticated
                 }
             }
             .stateIn(
@@ -35,8 +35,13 @@ class AuthViewModel @Inject constructor(
 }
 
 sealed class AuthState {
+
     object Loading : AuthState()
-    object Authenticated: AuthState()
+
+    data class Authenticated(
+        val avatar: String?
+    ): AuthState()
+
     object Unauthenticated: AuthState()
 
     fun shouldKeepSplashScreen() = this is Loading

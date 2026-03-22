@@ -17,7 +17,7 @@ class AccessTokenInterceptor @Inject constructor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = runBlocking {
-            tokenManager.getAccessJwt().first()
+            tokenManager.session.first().accessToken
         }
         val request = chain.request().newBuilder()
         if (token != null) {

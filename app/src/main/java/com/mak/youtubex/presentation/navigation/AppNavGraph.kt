@@ -148,6 +148,7 @@ fun RootNavHost(
                         exit = slideOutVertically(targetOffsetY = { it })
                     ) {
                         YTNavigationBar(
+                            userAvatar = (authState as? AuthState.Authenticated)?.avatar,
                             currentRoute = currentRoute,
                             onNavigate = { route ->
                                 navController.navigate(route) {
@@ -222,7 +223,7 @@ fun BootstrapRoute(
 ) {
     LaunchedEffect(authState) {
         when(authState) {
-            AuthState.Authenticated -> onAuthenticated()
+            is AuthState.Authenticated -> onAuthenticated()
             AuthState.Loading -> Unit
             AuthState.Unauthenticated -> onUnauthenticated()
         }

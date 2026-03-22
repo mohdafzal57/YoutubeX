@@ -17,7 +17,7 @@ class RefreshTokenInterceptor @Inject constructor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = runBlocking {
-            tokenManager.getRefreshJwt().first()
+            tokenManager.session.first().refreshToken
         }
         val request = chain.request().newBuilder()
         if (token != null) {

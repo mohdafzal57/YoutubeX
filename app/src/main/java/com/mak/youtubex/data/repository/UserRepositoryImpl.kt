@@ -31,6 +31,7 @@ import com.mak.youtubex.core.data.util.map
 import com.mak.youtubex.core.data.util.onSuccess
 import com.mak.youtubex.core.data.util.safeCall
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -139,29 +140,35 @@ class UserRepositoryImpl @Inject constructor(
     }
 
 
-    override
-    suspend fun signIn(request: SignInRequest): Result<SignInResponse, NetworkError> {
+    override suspend fun signIn(
+        request: SignInRequest
+    ): Result<SignInResponse, NetworkError> {
+
         val result = safeCall {
             userApi.signIn(request.toDto())
         }
-        return result
-            .onSuccess { dto ->
-                tokenManager.saveAccessJwt(dto.accessToken)
-                tokenManager.saveRefreshJwt(dto.refreshToken)
-                tokenManager.saveUserDetails(
-                    id = dto.user.id,
-                    name = dto.user.username,
-                    email = dto.user.email,
-                    avatar = dto.user.avatar
-                )
-            }.map { it.toDomain() }
+
+        result.onSuccess { dto ->
+            tokenManager.updateUser(
+                id = dto.user.id,
+                name = dto.user.username,
+                email = dto.user.email,
+                avatar = dto.user.avatar
+            )
+            tokenManager.updateTokens(
+                accessToken = dto.accessToken,
+                refreshToken = dto.refreshToken
+            )
+        }
+
+        return result.map { it.toDomain() }
     }
 
     override
     suspend fun signOut(): Result<Unit, NetworkError> {
         return safeCall {
             userApi.signOut()
-        }.onSuccess { tokenManager.clearAllTokens() }
+        }.onSuccess { tokenManager.clearSession() }
     }
 
     override
@@ -188,10 +195,28 @@ class UserRepositoryImpl @Inject constructor(
         ).flow.map { pagingData -> pagingData.map { it.toDomain() } }
     }
 
-    override
-    suspend fun updateAvatar(avatarUri: Uri): Result<String, NetworkError> {
+    override suspend fun updateAvatar(
+        avatarUri: Uri
+    ): Result<String, NetworkError> {
+
         val avatarPart = avatarUri.toCompressedMultipart(contentResolver, "avatar")
-        return safeCall { userApi.updateAvatar(avatar = avatarPart) }
+        val session = tokenManager.session.first()
+
+        if (session.id == null || session.name == null || session.email == null) {
+            return Result.Error(NetworkError.UNAUTHORIZED)
+        }
+
+        return safeCall {
+            userApi.updateAvatar(avatar = avatarPart)
+        }.onSuccess { updatedAvatar ->
+
+            tokenManager.updateUser(
+                id = session.id,
+                name = session.name,
+                email = session.email,
+                avatar = updatedAvatar
+            )
+        }
     }
 
     override suspend fun updateCoverImage(coverUri: Uri): Result<String, NetworkError> {

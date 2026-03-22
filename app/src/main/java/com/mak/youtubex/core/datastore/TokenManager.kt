@@ -9,22 +9,43 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class UserSession(
+    val id: String?,
+    val name: String?,
+    val email: String?,
+    val avatar: String?,
+    val accessToken: String?,
+    val refreshToken: String?
+) {
+    val isLoggedIn: Boolean
+        get() = !accessToken.isNullOrEmpty()
+}
 
 interface JwtTokenManager {
-    suspend fun saveUserDetails(id: String, name: String, email: String, avatar: String)
-    suspend fun saveAccessJwt(accessToken: String)
-    suspend fun saveRefreshJwt(refreshToken: String)
-    fun getAccessJwt(): Flow<String?>
-    fun getRefreshJwt(): Flow<String?>
-    fun getUserId(): Flow<String?>
-    suspend fun clearAllTokens()
+
+    val session: Flow<UserSession>
+
+    suspend fun updateUser(
+        id: String,
+        name: String,
+        email: String,
+        avatar: String
+    )
+
+    suspend fun updateTokens(
+        accessToken: String,
+        refreshToken: String
+    )
+
+    suspend fun clearSession()
 }
 
 @Singleton
 class TokenManager @Inject constructor(
     private val authDataStore: DataStore<Preferences>,
     private val encryptor: Encryptor
-): JwtTokenManager {
+) : JwtTokenManager {
+
     companion object {
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
@@ -34,57 +55,50 @@ class TokenManager @Inject constructor(
         private val USER_AVATAR_KEY = stringPreferencesKey("user_avatar")
     }
 
-    override fun getUserId(): Flow<String?> {
-        return authDataStore.data.map { preferences ->
-            preferences[USER_ID_KEY]
-        }
-    }
+    override val session: Flow<UserSession> =
+        authDataStore.data.map { pref ->
 
-    override suspend fun saveUserDetails(
+            val access = pref[ACCESS_TOKEN_KEY]?.let { encryptor.decrypt(it) }
+            val refresh = pref[REFRESH_TOKEN_KEY]?.let { encryptor.decrypt(it) }
+
+            UserSession(
+                id = pref[USER_ID_KEY],
+                name = pref[USER_NAME_KEY],
+                email = pref[USER_EMAIL_KEY],
+                avatar = pref[USER_AVATAR_KEY],
+                accessToken = access,
+                refreshToken = refresh
+            )
+        }
+
+    override suspend fun updateUser(
         id: String,
         name: String,
         email: String,
         avatar: String
     ) {
-        authDataStore.edit { preferences ->
-            preferences[USER_ID_KEY] = id
-            preferences[USER_EMAIL_KEY] = email
-            preferences[USER_NAME_KEY] = name
-            preferences[USER_AVATAR_KEY] = avatar
+        authDataStore.edit { pref ->
+            pref[USER_ID_KEY] = id
+            pref[USER_NAME_KEY] = name
+            pref[USER_EMAIL_KEY] = email
+            pref[USER_AVATAR_KEY] = avatar
         }
     }
 
-    override suspend fun saveAccessJwt(accessToken: String) {
-        val encrypted = encryptor.encrypt(accessToken)
-        authDataStore.edit { preferences ->
-            preferences[ACCESS_TOKEN_KEY] = encrypted
-        }
-    }
-    override suspend fun saveRefreshJwt(refreshToken: String) {
-        val encrypted = encryptor.encrypt(refreshToken)
-        authDataStore.edit { preferences ->
-            preferences[REFRESH_TOKEN_KEY] = encrypted
+    override suspend fun updateTokens(
+        accessToken: String,
+        refreshToken: String
+    ) {
+        val encryptedAccess = encryptor.encrypt(accessToken)
+        val encryptedRefresh = encryptor.encrypt(refreshToken)
+
+        authDataStore.edit { pref ->
+            pref[ACCESS_TOKEN_KEY] = encryptedAccess
+            pref[REFRESH_TOKEN_KEY] = encryptedRefresh
         }
     }
 
-    override fun getAccessJwt(): Flow<String?> {
-        return authDataStore.data.map { preferences ->
-            preferences[ACCESS_TOKEN_KEY]?.let {
-                encryptor.decrypt(it)
-            }
-        }
-    }
-    override fun getRefreshJwt(): Flow<String?> {
-        return authDataStore.data.map { preferences ->
-            preferences[REFRESH_TOKEN_KEY]?.let {
-                encryptor.decrypt(it)
-            }
-        }
-    }
-
-    override suspend fun clearAllTokens() {
-        authDataStore.edit { preferences->
-            preferences.clear()
-        }
+    override suspend fun clearSession() {
+        authDataStore.edit { it.clear() }
     }
 }
