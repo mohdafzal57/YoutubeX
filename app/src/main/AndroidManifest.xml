@@ -14,7 +14,7 @@
         android:required="true" />
 
     <application
-        android:name=".NoteXApplication"
+        android:name=".YoutubeXApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -22,19 +22,19 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NoteX"
+        android:theme="@style/Theme.YoutubeX"
         android:usesCleartextTraffic="true">
         <activity
             android:name=".presentation.upload.UploadActivity"
             android:exported="false"
             android:label="@string/title_activity_upload"
-            android:theme="@style/Theme.NoteX"
+            android:theme="@style/Theme.YoutubeX"
             android:windowSoftInputMode="adjustNothing" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.NoteXSplash">
+            android:theme="@style/YoutubeXSplash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

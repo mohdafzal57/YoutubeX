@@ -10,13 +10,13 @@ plugins {
 }
 
 android {
-    namespace = "com.mak.notex"
+    namespace = "com.mak.youtubex"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.mak.notex"
+        applicationId = "com.mak.youtubex"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -34,11 +34,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "BASE_URL", "\"https://youtube-ghl3.onrender.com/api/v1/\"")
         }
     }
     compileOptions {

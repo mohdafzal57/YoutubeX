@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "NoteX"
+rootProject.name = "YoutubeX"
 include(":app")
  

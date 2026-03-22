@@ -19,3 +19,24 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Gson rules
+-keepattributes Signature
+-keepattributes *Annotation*
+-keepattributes EnclosingMethod
+
+## Injection rules
+-keep class com.google.gson.reflect.TypeToken
+-keep class * extends com.google.gson.reflect.TypeToken
+-keep public class * implements java.lang.reflect.Type
+
+# Keep DTOs from being obfuscated as they are used for JSON serialization/deserialization
+-keep class com.mak.youtubex.data.remote.dto.** { *; }
+
+# Keep Retrofit API interfaces
+-keep interface com.mak.youtubex.data.remote.api.** { *; }
+
+# Keep Hilt/Dagger generated classes if needed (usually handled by AAR rules, but being safe)
+-keep class **_HiltModules* { *; }
+-keep class **_Factory { *; }
+-keep class **_MembersInjector { *; }
