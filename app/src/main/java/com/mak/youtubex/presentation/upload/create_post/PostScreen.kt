@@ -2,6 +2,7 @@ package com.mak.youtubex.presentation.upload.create_post
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,16 +63,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.rememberAsyncImagePainter
+import com.mak.youtubex.presentation.auth.AuthState
+import com.mak.youtubex.presentation.auth.AuthViewModel
 
 @Composable
 fun PostScreen(
     viewModel: CreatePostViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
     onCloseClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
     CreatePostContent(
         postState = uiState,
+        userAvatar = (authState as? AuthState.Authenticated)?.avatar,
         onTextChange = viewModel::updateText,
         onVisibilityChange = viewModel::updateVisibility,
         onPostClick = viewModel::submitPost,
@@ -83,12 +90,13 @@ fun PostScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePostContent(
+    modifier: Modifier = Modifier,
+    userAvatar: String? = null,
     postState: PostUiState,
     onTextChange: (String) -> Unit,
     onVisibilityChange: (PostVisibility) -> Unit,
     onPostClick: () -> Unit,
     onCloseClick: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
     var showVisibilityMenu by remember { mutableStateOf(false) }
 
@@ -217,12 +225,20 @@ fun CreatePostContent(
                     color = Color.DarkGray,
                     modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profile",
-                        modifier = Modifier.padding(8.dp),
-                        tint = Color.LightGray
-                    )
+                    if (userAvatar != null) {
+                        Image(
+                            painter = rememberAsyncImagePainter(userAvatar),
+                            contentDescription = "User Avatar",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            modifier = Modifier.padding(8.dp),
+                            tint = Color.LightGray
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
