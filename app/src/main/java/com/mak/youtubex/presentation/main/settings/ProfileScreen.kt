@@ -16,7 +16,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,8 +24,8 @@ import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
+fun ProfileScreen(
+    viewModel: ProfileViewModel = hiltViewModel(),
     onLogoutSuccess: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -35,20 +34,20 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is SettingsEvent.ShowMessage -> {
+                is ProfileEvent.ShowMessage -> {
                     snackbarHostState.showSnackbar(
                         message = event.message,
                         duration = SnackbarDuration.Short
                     )
                 }
-                is SettingsEvent.ShowError -> {
+                is ProfileEvent.ShowError -> {
                     snackbarHostState.showSnackbar(
                         message = event.error,
                         duration = SnackbarDuration.Long,
                         actionLabel = "Dismiss"
                     )
                 }
-                is SettingsEvent.NavigateToLogin -> onLogoutSuccess()
+                is ProfileEvent.NavigateToLogin -> onLogoutSuccess()
             }
         }
     }
@@ -56,13 +55,13 @@ fun SettingsScreen(
     val avatarLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.handleIntent(SettingsIntent.UpdateAvatar(it)) }
+        uri?.let { viewModel.onAction(ProfileAction.UpdateAvatar(it)) }
     }
 
     val coverImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.handleIntent(SettingsIntent.UpdateCoverImage(it)) }
+        uri?.let { viewModel.onAction(ProfileAction.UpdateCoverImage(it)) }
     }
 
     Scaffold(
@@ -103,20 +102,20 @@ fun SettingsScreen(
                 state.error != null && state.userProfile == null -> {
                     ErrorContent(
                         error = state.error!!,
-                        onRetry = { viewModel.handleIntent(SettingsIntent.LoadUserProfile) },
+                        onRetry = { viewModel.onAction(ProfileAction.LoadUserProfile) },
                         modifier = Modifier.align(Alignment.Center),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
 
                 state.userProfile != null -> {
-                    SettingsContent(
+                    ProfileScreenContent(
                         userProfile = state.userProfile!!,
                         onAvatarClick = { avatarLauncher.launch("image/*") },
                         onCoverImageClick = { coverImageLauncher.launch("image/*") },
-                        onEditProfile = { viewModel.handleIntent(SettingsIntent.ShowEditProfileDialog) },
-                        onChangePassword = { viewModel.handleIntent(SettingsIntent.ShowChangePasswordDialog) },
-                        onLogout = { viewModel.handleIntent(SettingsIntent.Logout) }
+                        onEditProfile = { viewModel.onAction(ProfileAction.ShowEditProfileDialog) },
+                        onChangePassword = { viewModel.onAction(ProfileAction.ShowChangePasswordDialog) },
+                        onLogout = { viewModel.onAction(ProfileAction.Logout) }
                     )
                 }
             }
@@ -125,18 +124,18 @@ fun SettingsScreen(
                 EditProfileDialog(
                     currentFullName = state.userProfile?.fullName ?: "",
                     currentEmail = state.userProfile?.email ?: "",
-                    onDismiss = { viewModel.handleIntent(SettingsIntent.DismissEditProfileDialog) },
+                    onDismiss = { viewModel.onAction(ProfileAction.DismissEditProfileDialog) },
                     onSave = { fullName, email ->
-                        viewModel.handleIntent(SettingsIntent.UpdateAccountDetails(fullName, email))
+                        viewModel.onAction(ProfileAction.UpdateAccountDetails(fullName, email))
                     }
                 )
             }
 
             if (state.showChangePasswordDialog) {
                 ChangePasswordDialog(
-                    onDismiss = { viewModel.handleIntent(SettingsIntent.DismissChangePasswordDialog) },
+                    onDismiss = { viewModel.onAction(ProfileAction.DismissChangePasswordDialog) },
                     onSave = { oldPassword, newPassword ->
-                        viewModel.handleIntent(SettingsIntent.ChangePassword(oldPassword, newPassword))
+                        viewModel.onAction(ProfileAction.ChangePassword(oldPassword, newPassword))
                     }
                 )
             }

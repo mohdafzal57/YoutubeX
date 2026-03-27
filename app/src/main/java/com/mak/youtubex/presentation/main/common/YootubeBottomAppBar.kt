@@ -6,6 +6,7 @@ import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +36,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -44,6 +47,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,8 +97,21 @@ fun YTNavigationBar(
     onNavigate: (String) -> Unit,
     userAvatar: String?,
 ) {
+    val outlineColor = MaterialTheme.colorScheme.outline
     ShortNavigationBar(
-        modifier = modifier,
+        modifier = modifier
+            .drawWithContent {
+            drawContent()
+            val strokeWidth = 1.dp.toPx()
+            val y = strokeWidth / 2
+
+            drawLine(
+                color = outlineColor,
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = strokeWidth
+            )
+        },
         containerColor = YTNavigationDefaults.containerColor()
     ) {
         TOP_LEVEL_DESTINATIONS.forEach { (destination, item) ->
@@ -159,7 +176,9 @@ fun YTNavigationBar(
                                 modifier = Modifier
                                     .clip(CircleShape)
                                     .size(24.dp),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(R.drawable.ic_avatar_placeholder),
+                                fallback = painterResource(R.drawable.ic_avatar_placeholder)
                             )
                             Box(
                                 modifier = Modifier

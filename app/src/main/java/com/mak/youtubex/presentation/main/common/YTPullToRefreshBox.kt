@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun YTPullToRefreshIndicator(
+fun YTPullToRefreshBox(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
@@ -31,8 +31,7 @@ fun YTPullToRefreshIndicator(
                 state = state,
                 isRefreshing = isRefreshing,
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 8.dp),
+                    .align(Alignment.TopCenter),
                 containerColor = MaterialTheme.colorScheme.surface,
                 color = MaterialTheme.colorScheme.primary,
             )

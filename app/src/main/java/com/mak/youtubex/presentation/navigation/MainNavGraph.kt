@@ -14,7 +14,7 @@ import com.mak.youtubex.presentation.main.home.HomeScreen
 import com.mak.youtubex.presentation.main.player.PlayerScreen
 import com.mak.youtubex.presentation.main.player.PlayerViewModel
 import com.mak.youtubex.presentation.main.search.SearchScreen
-import com.mak.youtubex.presentation.main.settings.SettingsScreen
+import com.mak.youtubex.presentation.main.settings.ProfileScreen
 import com.mak.youtubex.presentation.main.social_feed.SocialFeedScreen
 import com.mak.youtubex.presentation.main.subscription.SubscriptionScreen
 import java.net.URLDecoder
@@ -37,6 +37,9 @@ fun NavGraphBuilder.mainNavGraph(
                     // BEST PRACTICE: Use createRoute instead of manual string concatenation
                     navController.navigate(Screen.ChannelDetail.createRoute(username, ownerId))
                 },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
+                }
             )
         }
 
@@ -80,7 +83,7 @@ fun NavGraphBuilder.mainNavGraph(
         }
 
         composable(Screen.Settings.route) {
-            SettingsScreen(
+            ProfileScreen(
                 onLogoutSuccess = onNavigateToAuth
             )
         }

@@ -24,7 +24,7 @@ import com.mak.youtubex.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun YootubeTopAppBar(
+fun YTTopAppBar(
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     onNavigateToSearch: () -> Unit = {}
@@ -37,15 +37,14 @@ fun YootubeTopAppBar(
             scrolledContainerColor = MaterialTheme.colorScheme.surface // Keep it the same when scrolled
         ),
         title = { },
-        navigationIcon = {
-            YooTubeLogo()
-        },
+        navigationIcon = { YTLogo() },
         actions = { VideoSearchIcon(onClick = onNavigateToSearch) }
     )
 }
+
 @Preview(showBackground = true)
 @Composable
-fun YooTubeLogo(
+fun YTLogo(
     modifier: Modifier = Modifier
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurface

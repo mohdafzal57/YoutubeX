@@ -7,8 +7,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -41,7 +44,7 @@ import com.mak.youtubex.R
 import com.mak.youtubex.presentation.auth.AuthState
 import com.mak.youtubex.presentation.main.common.TOP_LEVEL_DESTINATIONS
 import com.mak.youtubex.presentation.main.common.YTNavigationBar
-import com.mak.youtubex.presentation.main.common.YootubeTopAppBar
+import com.mak.youtubex.presentation.main.common.YTTopAppBar
 
 val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
     error("SnackbarHostState not provided")
@@ -97,23 +100,12 @@ fun RootNavHost(
         }
     }
 
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
-        canScroll = { currentRoute == Screen.Home.route || currentRoute == Screen.SocialFeed.route }
-    )
-    LaunchedEffect(currentRoute) {
-        if (currentRoute != Screen.Home.route) {
-            scrollBehavior.state.heightOffset = 0f
-            scrollBehavior.state.contentOffset = 0f
-        }
-    }
-
     CompositionLocalProvider(LocalSnackbarHostState provides snackbarHostState) {
         Surface(
             contentColor = MaterialTheme.colorScheme.onBackground,
             color = MaterialTheme.colorScheme.background
         ) {
             Scaffold(
-                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onBackground,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -127,26 +119,8 @@ fun RootNavHost(
                         ),
                     )
                 },
-                topBar = {
-                    AnimatedVisibility(
-                        visible = isMainGraph,
-                        enter = slideInVertically(initialOffsetY = { -it }),
-                        exit = slideOutVertically(targetOffsetY = { -it })
-                    ) {
-                        YootubeTopAppBar(
-                            scrollBehavior = scrollBehavior,
-                            onNavigateToSearch = {
-                                navController.navigate(Screen.Search.route)
-                            }
-                        )
-                    }
-                },
                 bottomBar = {
-                    AnimatedVisibility(
-                        visible = isMainGraph,
-                        enter = slideInVertically(initialOffsetY = { it }),
-                        exit = slideOutVertically(targetOffsetY = { it })
-                    ) {
+                    if (isMainGraph) {
                         YTNavigationBar(
                             userAvatar = (authState as? AuthState.Authenticated)?.avatar,
                             currentRoute = currentRoute,
@@ -165,15 +139,18 @@ fun RootNavHost(
                         )
                     }
                 }
-            ) { paddingValues ->
+            ) { innerPadding ->
                 NavHost(
                     navController = navController,
                     startDestination = "bootstrap",
-                    modifier = if (isMainGraph) Modifier.padding(paddingValues) else Modifier,
-                    enterTransition = { fadeIn(tween(200)) },
-                    exitTransition = { fadeOut(tween(200)) },
-                    popEnterTransition = { fadeIn(tween(200)) },
-                    popExitTransition = { fadeOut(tween(200)) }
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding)
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Horizontal,
+                            ),
+                        )
                 ) {
 
                     composable("bootstrap") {

@@ -20,6 +20,7 @@ import com.mak.youtubex.data.remote.api.VideoApi
 import com.mak.youtubex.core.data.network.auth.AuthAuthenticator
 import com.mak.youtubex.core.data.network.interceptor.AccessTokenInterceptor
 import com.mak.youtubex.core.data.network.interceptor.RefreshTokenInterceptor
+import com.mak.youtubex.data.remote.api.PostApi
 import com.mak.youtubex.domain.model.LocalVideo
 import com.mak.youtubex.utils.MediaStoreThumbnailFetcher
 import dagger.Module
@@ -28,6 +29,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -86,11 +88,13 @@ object AppModule {
     @[Singleton Provides AuthenticatedClient]
     fun provideAccessOkHttpClient(
         accessTokenInterceptor: AccessTokenInterceptor,
-        authAuthenticator: AuthAuthenticator
+        authAuthenticator: AuthAuthenticator,
+        loggingInterceptor: HttpLoggingInterceptor
         ): OkHttpClient {
         return OkHttpClient.Builder()
             .authenticator(authAuthenticator) //  the AuthAuthenticator automatically takes over to refresh the token and then resends the failed request.
             .addInterceptor(accessTokenInterceptor)
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 
@@ -101,15 +105,21 @@ object AppModule {
     @[Singleton Provides TokenRefreshClient]
     fun provideRefreshOkHttpClient(
         refreshTokenInterceptor: RefreshTokenInterceptor,
+        loggingInterceptor: HttpLoggingInterceptor
         ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(refreshTokenInterceptor)
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 
     @[Singleton Provides PublicClient]
-    fun provideUnAuthenticatedOkHttpClient(): OkHttpClient {
-        return OkHttpClient.Builder().build()
+    fun provideUnAuthenticatedOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .build()
     }
 
     // Api's starting from here!!
@@ -158,11 +168,32 @@ object AppModule {
         return retrofitBuilder.client(okHttpClient).build().create(LikeApi::class.java)
     }
 
+    @Singleton
+    @Provides
+    fun providePostApi(
+        retrofitBuilder: Retrofit.Builder,
+        @AuthenticatedClient okHttpClient: OkHttpClient
+    ): PostApi {
+        return retrofitBuilder.client(okHttpClient).build().create(PostApi::class.java)
+    }
+
     @[Provides Singleton]
     fun provideRefreshTokenApi(
         retrofitBuilder: Retrofit.Builder,
         @TokenRefreshClient okHttpClient: OkHttpClient): RefreshTokenApi {
         return retrofitBuilder.client(okHttpClient).build().create(RefreshTokenApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
+        return HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
+        }
     }
 }
 

@@ -27,8 +27,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,7 +50,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.mak.youtubex.presentation.main.common.FullScreenLoader
-import com.mak.youtubex.presentation.main.common.YTPullToRefreshIndicator
+import com.mak.youtubex.presentation.main.common.YTPullToRefreshBox
 import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,47 +79,65 @@ fun SubscriptionScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        when (val state = uiState) {
-            is SubscriptionUiState.Loading -> {
-                FullScreenLoader()
-            }
-
-            is SubscriptionUiState.Error -> {
-                ErrorScreen(
-                    message = state.message,
-                    onRetry = viewModel::refreshSubscriptions
+    // 1. Added Scaffold
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Subscriptions",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
                 )
-            }
+            )
+        }
+    ) { innerPadding -> // 2. Use padding from scaffold
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // Apply scaffold padding
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            when (val state = uiState) {
+                is SubscriptionUiState.Loading -> {
+                    FullScreenLoader()
+                }
 
-            is SubscriptionUiState.Success -> {
-                if (state.subscriptions.isEmpty()) {
-                    EmptyScreen()
-                } else {
-                    YTPullToRefreshIndicator(
-                        isRefreshing = state.isRefreshing,
-                        onRefresh = viewModel::refreshSubscriptions
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(vertical = 8.dp)
+                is SubscriptionUiState.Error -> {
+                    ErrorScreen(
+                        message = state.message,
+                        onRetry = viewModel::refreshSubscriptions
+                    )
+                }
+
+                is SubscriptionUiState.Success -> {
+                    if (state.subscriptions.isEmpty()) {
+                        EmptyScreen()
+                    } else {
+                        YTPullToRefreshBox(
+                            isRefreshing = state.isRefreshing,
+                            onRefresh = viewModel::refreshSubscriptions
                         ) {
-                            items(
-                                items = state.subscriptions,
-                                key = { it.id }
-                            ) { item ->
-                                SubscriptionItemRow(
-                                    item = item,
-                                    onItemClick = { onNavigateToChannel(item.name, item.id) },
-                                    onNotificationClick = {
-                                        selectedItem = item
-                                        showBottomSheet = true
-                                    }
-                                )
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(vertical = 8.dp)
+                            ) {
+                                items(
+                                    items = state.subscriptions,
+                                    key = { it.id }
+                                ) { item ->
+                                    SubscriptionItemRow(
+                                        item = item,
+                                        onItemClick = { onNavigateToChannel(item.name, item.id) },
+                                        onNotificationClick = {
+                                            selectedItem = item
+                                            showBottomSheet = true
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -125,7 +146,7 @@ fun SubscriptionScreen(
         }
     }
 
-    // 3. Handle Bottom Sheet Logic
+    // Handle Bottom Sheet Logic
     if (showBottomSheet && selectedItem != null) {
         NotificationSettingsSheet(
             onDismiss = { showBottomSheet = false },
@@ -137,7 +158,6 @@ fun SubscriptionScreen(
         )
     }
 }
-
 // --- List Item ---
 @Composable
 fun SubscriptionItemRow(

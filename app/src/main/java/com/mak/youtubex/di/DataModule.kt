@@ -1,7 +1,10 @@
 package com.mak.youtubex.di
 
+import com.mak.youtubex.data.local.YTDatabase
+import com.mak.youtubex.data.remote.api.PostApi
 import com.mak.youtubex.data.repository.LikeRepositoryImpl
 import com.mak.youtubex.data.repository.LocalMediaRepositoryImpl
+import com.mak.youtubex.data.repository.SocialRepositoryImpl
 import com.mak.youtubex.data.repository.SubscriptionRepositoryImpl
 import com.mak.youtubex.data.repository.UserRepositoryImpl
 import com.mak.youtubex.data.repository.VideoRepositoryImpl
@@ -9,6 +12,7 @@ import com.mak.youtubex.data.utils.ConnectivityManagerNetworkMonitor
 import com.mak.youtubex.data.utils.NetworkMonitor
 import com.mak.youtubex.domain.repository.LikeRepository
 import com.mak.youtubex.domain.repository.LocalMediaRepository
+import com.mak.youtubex.domain.repository.SocialRepository
 import com.mak.youtubex.domain.repository.SubscriptionRepository
 import com.mak.youtubex.domain.repository.UserRepository
 import com.mak.youtubex.domain.repository.VideoRepository
@@ -16,6 +20,7 @@ import com.mak.youtubex.utils.CoilMediaPrefetcher
 import com.mak.youtubex.utils.MediaPrefetcher
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -52,6 +57,12 @@ abstract class DataModule {
     abstract fun bindSubscriptionRepository(
         impl: SubscriptionRepositoryImpl
     ): SubscriptionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSocialRepository(
+        impl: SocialRepositoryImpl
+    ): SocialRepository
 
     @Binds
     @Singleton

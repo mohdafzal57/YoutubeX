@@ -1,7 +1,10 @@
 package com.mak.youtubex.presentation.upload.create_post
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,15 +22,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Gif
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -49,24 +51,21 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.mak.youtubex.presentation.auth.AuthState
 import com.mak.youtubex.presentation.auth.AuthViewModel
-
 @Composable
 fun PostScreen(
     viewModel: CreatePostViewModel = hiltViewModel(),
@@ -76,12 +75,44 @@ fun PostScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
+    // 🔴 Handle one-time events
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when (event) {
+                is CreatePostEvent.Success -> {
+                    onCloseClick()
+                }
+                is CreatePostEvent.Error -> {
+                    // TODO: show snackbar
+                }
+            }
+        }
+    }
+
     CreatePostContent(
         postState = uiState,
         userAvatar = (authState as? AuthState.Authenticated)?.avatar,
-        onTextChange = viewModel::updateText,
-        onVisibilityChange = viewModel::updateVisibility,
-        onPostClick = viewModel::submitPost,
+
+        onTextChange = {
+            viewModel.onAction(CreatePostAction.OnTextChange(it))
+        },
+
+        onVisibilityChange = {
+            viewModel.onAction(CreatePostAction.OnVisibilityChange(it))
+        },
+
+        onPostClick = {
+            viewModel.onAction(CreatePostAction.OnSubmit)
+        },
+
+        onImagesSelected = {
+            viewModel.onAction(CreatePostAction.OnMediaSelected(it))
+        },
+
+        onRemoveMedia = {
+            viewModel.onAction(CreatePostAction.OnRemoveMedia(it))
+        },
+
         onCloseClick = onCloseClick,
         modifier = Modifier.fillMaxSize()
     )
@@ -97,8 +128,16 @@ fun CreatePostContent(
     onVisibilityChange: (PostVisibility) -> Unit,
     onPostClick: () -> Unit,
     onCloseClick: () -> Unit,
+    onImagesSelected: (List<Uri>) -> Unit,
+    onRemoveMedia: (Uri) -> Unit,
 ) {
-    var showVisibilityMenu by remember { mutableStateOf(false) }
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 4)
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            onImagesSelected(uris)
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -120,7 +159,7 @@ fun CreatePostContent(
                 actions = {
                     Button(
                         onClick = onPostClick,
-                        enabled = postState.text.isNotBlank(),
+                        enabled = postState.text.isNotBlank() && !postState.isLoading,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.White,
                             contentColor = Color.DarkGray,
@@ -131,7 +170,14 @@ fun CreatePostContent(
                         contentPadding = PaddingValues(horizontal = 20.dp),
                         shape = CircleShape
                     ) {
-                        Text("Post", fontWeight = FontWeight.Bold)
+                        if (postState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Post", fontWeight = FontWeight.Bold)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
@@ -159,7 +205,11 @@ fun CreatePostContent(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { }) {
+                            IconButton(onClick = {
+                                launcher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }) {
                                 Icon(Icons.Default.Image, "Gallery", tint = Color.White)
                             }
                             IconButton(onClick = { }) {
@@ -181,7 +231,7 @@ fun CreatePostContent(
                                     progress > 0.8f -> Color(0xFFFFCC00)
                                     else -> Color.White
                                 },
-                                label = "progress_color"
+                                label = ""
                             )
 
                             Box(
@@ -210,12 +260,14 @@ fun CreatePostContent(
         },
         containerColor = Color.Black
     ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            // User Header
+
+            // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp)
@@ -228,13 +280,13 @@ fun CreatePostContent(
                     if (userAvatar != null) {
                         Image(
                             painter = rememberAsyncImagePainter(userAvatar),
-                            contentDescription = "User Avatar",
+                            contentDescription = null,
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
+                            contentDescription = null,
                             modifier = Modifier.padding(8.dp),
                             tint = Color.LightGray
                         )
@@ -245,62 +297,47 @@ fun CreatePostContent(
 
                 Column {
                     Text(
-                        text = "Mohd Umar",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            color = Color.White
-                        ),
-                        lineHeight = 8.sp
+                        text = "User",
+                        style = MaterialTheme.typography.titleSmall.copy(color = Color.White)
                     )
 
-                    Surface(
-                        onClick = { /* Visibility Toggle Logic */ },
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.Transparent,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 2.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = when (postState.visibility) {
-                                    PostVisibility.PUBLIC -> Icons.Default.Public
-                                    PostVisibility.PRIVATE -> Icons.Default.Lock
-                                    PostVisibility.FOLLOWERS -> Icons.Default.Group
-                                },
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = postState.visibility.name.lowercase()
-                                    .replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = Color.White
-                            )
+                        val icon = when (postState.visibility) {
+                            PostVisibility.PUBLIC -> Icons.Default.Public
+                            PostVisibility.PRIVATE -> Icons.Default.Lock
                         }
+
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Text(
+                            text = postState.visibility.name.lowercase()
+                                .replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
 
-            // Input Area
+            // Input
             TextField(
                 value = postState.text,
                 onValueChange = { if (it.length <= 280) onTextChange(it) },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
                         "What's happening?",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
@@ -314,30 +351,54 @@ fun CreatePostContent(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 ),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
+                textStyle = MaterialTheme.typography.bodyLarge,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+                enabled = !postState.isLoading
             )
+
+            if (postState.media.isNotEmpty()) {
+                SelectedImagesPreview(
+                    media = postState.media,
+                    onRemove = onRemoveMedia
+                )
+            }
         }
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
-fun CreatePostContentPreview() {
-    // Mocking state using remember for the preview
-    var text by remember { mutableStateOf("Working on a new Jetpack Compose feature! 🚀") }
-    var visibility by remember { mutableStateOf(PostVisibility.PUBLIC) }
+fun SelectedImagesPreview(
+    media: List<Uri>,
+    onRemove: (Uri) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.padding(horizontal = 12.dp)
+    ) {
+        items(media) { uri ->
+            Box(
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .size(80.dp)
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter(uri),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
 
-    MaterialTheme {
-        CreatePostContent(
-            postState = PostUiState(
-                text = text,
-                visibility = visibility,
-            ),
-            onTextChange = { text = it },
-            onVisibilityChange = { visibility = it },
-            onPostClick = { /* Do nothing in preview */ },
-            onCloseClick = { /* Do nothing in preview */ }
-        )
+                IconButton(
+                    onClick = { onRemove(uri) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(20.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+            }
+        }
     }
 }

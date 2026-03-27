@@ -13,10 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-
     primary = BrandPrimary,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFF7F0018),
+    primaryContainer = BrandPrimaryDark,
     onPrimaryContainer = BrandPrimaryContainer,
 
     secondary = AccentBlue,
@@ -24,14 +23,16 @@ private val DarkColorScheme = darkColorScheme(
     secondaryContainer = AccentBlueContainer,
     onSecondaryContainer = Color(0xFFD0E4FF),
 
+    // Layering Neutrals for depth
     background = Neutral0,
     onBackground = Neutral90,
 
-    surface = Neutral10,
+    surface = Neutral10, // Base surface
     onSurface = Neutral90,
 
-    surfaceVariant = Neutral30,
-    onSurfaceVariant = Neutral70,
+    // SurfaceVariant is perfect for Skeletons and Chips
+    surfaceVariant = Neutral20,
+    onSurfaceVariant = Neutral70, // Ideal for secondary text (view counts, dates)
 
     outline = Neutral40,
 
@@ -40,7 +41,6 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-
     primary = BrandPrimary,
     onPrimary = Color.White,
     primaryContainer = BrandPrimaryContainer,
@@ -54,9 +54,10 @@ private val LightColorScheme = lightColorScheme(
     background = LightNeutral0,
     onBackground = LightNeutral90,
 
-    surface = LightNeutral0,
+    surface = LightNeutral10, // Slight off-white for better eye comfort
     onSurface = LightNeutral90,
 
+    // Light skeletons look best on LightNeutral20
     surfaceVariant = LightNeutral20,
     onSurfaceVariant = LightNeutral60,
 
