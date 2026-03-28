@@ -3,13 +3,17 @@ package com.mak.youtubex.presentation.upload_video
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.telecom.VideoProfile.isPaused
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.ImageCapture
+import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,8 +47,7 @@ fun CaptureScreen(
     modifier: Modifier = Modifier,
     vm: CameraViewModel,
     navigateToUploadDetail: (Uri) -> Unit,
-    onRecording: (Boolean) -> Unit,
-    onBackClick: () -> Unit
+    onRecording: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -64,13 +67,11 @@ fun CaptureScreen(
     }
 
     val request by vm.surfaceRequest.collectAsStateWithLifecycle(null)
-    val recordingState by vm.recordingState.collectAsStateWithLifecycle()
+    val recordingState by vm.recordingUiState.collectAsStateWithLifecycle()
     val recordedVideoUri by vm.videoRecordingUri.collectAsStateWithLifecycle()
     val flashMode by vm.flashMode.collectAsStateWithLifecycle()
 
-    val isRecording = recordingState is CameraViewModel.RecordingState.Active
-    val isPaused =
-        (recordingState as? CameraViewModel.RecordingState.Active)?.isPaused == true
+    val isRecording = recordingState !is RecordingUiState.Idle
 
     LaunchedEffect(recordedVideoUri) {
         recordedVideoUri?.let {
@@ -171,8 +172,7 @@ fun CaptureScreen(
             ) {
                 PermissionGate(permission = Permission.RECORD_AUDIO) {
                     RecordingButton(
-                        isRecording = isRecording,
-                        isPaused = isPaused,
+                        state = recordingState,
                         onClick = {
                             val micGranted =
                                 ContextCompat.checkSelfPermission(
@@ -242,49 +242,46 @@ private fun CaptureSideButton(
 
 @Composable
 fun RecordingButton(
-    isRecording: Boolean,
-    isPaused: Boolean,
+    state: RecordingUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
-    val innerSize by animateDpAsState(
-        targetValue = when {
-            !isRecording -> 60.dp
-            isPaused -> 48.dp
-            else -> 32.dp
-        },
-        label = "inner"
+    val transition = updateTransition(
+        targetState = state,
+        label = "recording_transition"
     )
 
-    val outerSize by animateDpAsState(
-        targetValue = if (isRecording) 88.dp else 76.dp,
-        label = "outer"
-    )
+    val innerSize by transition.animateDp(label = "inner_size") { s ->
+        when (s) {
+            RecordingUiState.Idle -> 60.dp
+            RecordingUiState.Paused -> 48.dp
+            RecordingUiState.Recording -> 32.dp
+        }
+    }
 
-    val cornerSize by animateDpAsState(
-        targetValue = when {
-            !isRecording -> 30.dp          // circle
-            isPaused -> 30.dp             // circle (resume state)
-            else -> 8.dp                  // square (recording state)
-        },
-        label = "corner"
-    )
+    val outerSize by transition.animateDp(label = "outer_size") { s ->
+        when (s) {
+            RecordingUiState.Idle -> 76.dp
+            else -> 88.dp
+        }
+    }
 
-    val borderColor by animateColorAsState(
-        targetValue = if (isRecording) Color.Red else Color.White,
-        label = "borderColor"
-    )
+    val corner by transition.animateDp(label = "corner") { s ->
+        when (s) {
+            RecordingUiState.Recording -> 8.dp
+            else -> 30.dp
+        }
+    }
 
-    val innerColor by animateColorAsState(
-        targetValue = when {
-            !isRecording -> Color.Red
-            isPaused -> Color.Red       // paused = white resume indicator
-            else -> Color.Red             // active recording
-        },
-        label = "innerColor"
-    )
+    val borderColor by transition.animateColor(label = "border") { s ->
+        if (s == RecordingUiState.Recording) Color.Red else Color.White
+    }
+
+    val innerColor by transition.animateColor(label = "inner_color") { s ->
+        Color.Red // can evolve later (pulse, gradient, etc.)
+    }
 
     Box(
         modifier = modifier
@@ -297,18 +294,18 @@ fun RecordingButton(
         contentAlignment = Alignment.Center
     ) {
 
-        // Outer ring
+        // Outer Ring
         Box(
             modifier = Modifier
                 .size(outerSize)
                 .border(4.dp, borderColor, CircleShape)
         )
 
-        // Inner core
+        // Inner Core
         Box(
             modifier = Modifier
                 .size(innerSize)
-                .background(innerColor, RoundedCornerShape(cornerSize))
+                .background(innerColor, RoundedCornerShape(corner))
         )
     }
 }

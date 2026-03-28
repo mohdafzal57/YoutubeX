@@ -30,6 +30,8 @@ import com.mak.youtubex.core.data.util.Result
 import com.mak.youtubex.core.data.util.map
 import com.mak.youtubex.core.data.util.onSuccess
 import com.mak.youtubex.core.data.util.safeCall
+import com.mak.youtubex.data.local.PostDao
+import com.mak.youtubex.data.local.RemoteKeysDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -44,6 +46,8 @@ import javax.inject.Singleton
 class UserRepositoryImpl @Inject constructor(
     private val userApi: UserApi,
     private val tokenManager: TokenManager,
+    private val postDao: PostDao,
+    private val remoteKeysDao: RemoteKeysDao,
     private val contentResolver: ContentResolver
 ) : UserRepository {
 
@@ -168,7 +172,11 @@ class UserRepositoryImpl @Inject constructor(
     suspend fun signOut(): Result<Unit, NetworkError> {
         return safeCall {
             userApi.signOut()
-        }.onSuccess { tokenManager.clearSession() }
+        }.onSuccess {
+            tokenManager.clearSession()
+            postDao.clearAll()
+            remoteKeysDao.clearRemoteKeys()
+        }
     }
 
     override

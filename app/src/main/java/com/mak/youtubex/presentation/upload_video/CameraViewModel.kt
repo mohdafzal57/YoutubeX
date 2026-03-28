@@ -35,46 +35,44 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
 import javax.inject.Inject
 
+sealed interface RecordingUiState {
+    data object Idle : RecordingUiState
+    data object Recording : RecordingUiState
+    data object Paused : RecordingUiState
+}
+
 @HiltViewModel
 class CameraViewModel @Inject constructor(
     app: Application
 ) : AndroidViewModel(app) {
 
-    /* ----------------------------- Recording State ----------------------------- */
+    /* ----------------------------- UI STATE ----------------------------- */
 
-    sealed interface RecordingState {
-        object Idle : RecordingState
-        data class Active(
-            val recording: Recording,
-            val isPaused: Boolean
-        ) : RecordingState
-    }
+    private val _recordingUiState =
+        MutableStateFlow<RecordingUiState>(RecordingUiState.Idle)
+    val recordingUiState: StateFlow<RecordingUiState> =
+        _recordingUiState.asStateFlow()
 
-    private val _recordingState =
-        MutableStateFlow<RecordingState>(RecordingState.Idle)
-    val recordingState: StateFlow<RecordingState> =
-        _recordingState.asStateFlow()
+    private val _videoRecordingUri = MutableStateFlow<Uri?>(null)
+    val videoRecordingUri: StateFlow<Uri?> = _videoRecordingUri.asStateFlow()
 
-    /* ----------------------------- Camera State ----------------------------- */
+    /* ----------------------------- CAMERA STATE ----------------------------- */
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     val surfaceRequest: StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     private val _camera = MutableStateFlow<Camera?>(null)
-    val camera: StateFlow<Camera?> = _camera.asStateFlow()
 
     private val _videoCapture = MutableStateFlow<VideoCapture<Recorder>?>(null)
-    val videoCapture: StateFlow<VideoCapture<Recorder>?> = _videoCapture.asStateFlow()
-
-    private val _videoRecordingUri = MutableStateFlow<Uri?>(null)
-    val videoRecordingUri: StateFlow<Uri?> = _videoRecordingUri.asStateFlow()
 
     private val _lensFacing = MutableStateFlow(CameraSelector.LENS_FACING_BACK)
-    val lensFacing: StateFlow<Int> = _lensFacing.asStateFlow()
 
     private val _flashMode = MutableStateFlow(ImageCapture.FLASH_MODE_OFF)
     val flashMode: StateFlow<Int> = _flashMode.asStateFlow()
 
+    /* ----------------------------- ENGINE STATE (PRIVATE) ----------------------------- */
+
+    private var activeRecording: Recording? = null
     private var currentLifecycleOwner: LifecycleOwner? = null
 
     private val appContext = app.applicationContext
@@ -84,7 +82,7 @@ class CameraViewModel @Inject constructor(
     private suspend fun provider(): ProcessCameraProvider =
         ProcessCameraProvider.awaitInstance(getApplication())
 
-    /* ----------------------------- Binding ----------------------------- */
+    /* ----------------------------- BINDING ----------------------------- */
 
     fun bindCapture(
         lifecycleOwner: LifecycleOwner,
@@ -134,7 +132,7 @@ class CameraViewModel @Inject constructor(
         }
     }
 
-    /* ----------------------------- Camera Controls ----------------------------- */
+    /* ----------------------------- CAMERA CONTROLS ----------------------------- */
 
     fun toggleCamera() {
         _lensFacing.update {
@@ -160,37 +158,33 @@ class CameraViewModel @Inject constructor(
             ?.enableTorch(_flashMode.value == ImageCapture.FLASH_MODE_ON)
     }
 
-    /* ----------------------------- Recording Logic ----------------------------- */
+    /* ----------------------------- RECORDING LOGIC ----------------------------- */
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun toggleRecording() {
         val vc = _videoCapture.value ?: return
 
-        when (val state = _recordingState.value) {
+        when (_recordingUiState.value) {
 
-            RecordingState.Idle -> {
+            RecordingUiState.Idle -> {
                 startRecording(vc)
             }
 
-            is RecordingState.Active -> {
-                if (state.isPaused) {
-                    state.recording.resume()
-                    _recordingState.value =
-                        state.copy(isPaused = false)
-                } else {
-                    state.recording.pause()
-                    _recordingState.value =
-                        state.copy(isPaused = true)
-                }
+            RecordingUiState.Recording -> {
+                activeRecording?.pause()
+                _recordingUiState.value = RecordingUiState.Paused
+            }
+
+            RecordingUiState.Paused -> {
+                activeRecording?.resume()
+                _recordingUiState.value = RecordingUiState.Recording
             }
         }
     }
 
     fun stopRecording() {
-        val state = _recordingState.value
-        if (state is RecordingState.Active) {
-            state.recording.stop()
-        }
+        activeRecording?.stop()
+        activeRecording = null
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -229,18 +223,16 @@ class CameraViewModel @Inject constructor(
                             event.outputResults.outputUri
                     }
 
-                    _recordingState.value = RecordingState.Idle
+                    activeRecording = null
+                    _recordingUiState.value = RecordingUiState.Idle
                 }
             }
 
-        _recordingState.value =
-            RecordingState.Active(
-                recording = recording,
-                isPaused = false
-            )
+        activeRecording = recording
+        _recordingUiState.value = RecordingUiState.Recording
     }
 
-    /* ----------------------------- Helpers ----------------------------- */
+    /* ----------------------------- HELPERS ----------------------------- */
 
     fun clearVideoUri() {
         _videoRecordingUri.value = null
@@ -259,7 +251,7 @@ class CameraViewModel @Inject constructor(
                 _surfaceRequest.value = null
                 currentLifecycleOwner = null
 
-                _recordingState.value = RecordingState.Idle
+                _recordingUiState.value = RecordingUiState.Idle
 
             } catch (_: Exception) {
                 // optional logging

@@ -5,47 +5,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import androidx.paging.map
 import com.mak.youtubex.core.data.util.NetworkError
-import com.mak.youtubex.core.data.util.Result
 import com.mak.youtubex.core.data.util.onFailure
+import com.mak.youtubex.core.data.util.onSuccess
 import com.mak.youtubex.data.local.PostDao
+import com.mak.youtubex.domain.model.Comment
+import com.mak.youtubex.domain.model.Post
 import com.mak.youtubex.domain.repository.SocialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@Immutable
-data class Post(
-    val id: String,
-    val avatarUrl: String,
-    val username: String,
-    val timestamp: String,
-    val body: String,
-    val imageUrls: List<String> = emptyList(),
-    val likeCount: Int = 0,
-    val commentCount: Int = 0,
-    val isLiked: Boolean = false
-)
-
-//@Immutable
-//data class SocialFeedUiState(
-//    val posts: List<Post> = emptyList(),
-//    val isLoading: Boolean = false,
-//    val error: String? = null
-//)
-
 sealed interface SocialFeedAction {
     data class ToggleLike(val postId: String) : SocialFeedAction
+    data class AddComment(val postId: String, val content: String) : SocialFeedAction
 }
 
 sealed interface SocialFeedEvent {
@@ -63,76 +43,69 @@ class SocialFeedViewModel @Inject constructor(
         .cachedIn(viewModelScope)
 
 
-    private val _events = Channel<SocialFeedEvent>()
-    val events = _events.receiveAsFlow()
+    private val _events = MutableSharedFlow<SocialFeedEvent>()
+    val events = _events.asSharedFlow()
 
     fun onAction(action: SocialFeedAction) {
         when (action) {
             is SocialFeedAction.ToggleLike -> toggleLike(action.postId)
+            is SocialFeedAction.AddComment -> addComment(action.postId, action.content)
         }
     }
 
+    private val likeJob: MutableMap<String, Job?> = mutableMapOf()
+
     fun toggleLike(postId: String) {
-        viewModelScope.launch {
+        likeJob[postId]?.cancel()
+
+        likeJob[postId] = viewModelScope.launch {
             val post = postDao.getPostById(postId) ?: return@launch
-            val currentlyLiked = post.isLiked
+            val originalState = post.isLiked
 
-            postDao.toggleLike(postId)
+            postDao.toggleLike(postId) // optimistic update
 
-            val result = if (currentlyLiked) {
-                repository.unLikePost(postId)
-            } else {
+            delay(500) // debounce - wait for rapid-taps
+
+            val finalPost = postDao.getPostById(postId) ?: return@launch
+            val finalState = finalPost.isLiked
+
+            if (originalState == finalState) return@launch
+
+            // Re-read final intended state after debounce
+            val result = if (finalState) {
                 repository.likePost(postId)
+            } else {
+                repository.unLikePost(postId)
             }
 
             result.onFailure {
                 if (it == NetworkError.EMPTY_HAND) return@onFailure
-                _events.send(SocialFeedEvent.ShowError("Failed to update like"))
+                _events.emit(SocialFeedEvent.ShowError("Failed to update like"))
                 postDao.toggleLike(postId)
             }
         }
     }
+
+    fun getComments(postId: String): Flow<PagingData<Comment>> {
+        return repository.getComments(postId).cachedIn(viewModelScope)
+    }
+
+    private val _isSendingComment = MutableStateFlow(false)
+    val isSendingComment: StateFlow<Boolean> = _isSendingComment
+
+    private fun addComment(postId: String, content: String) {
+        if (content.isBlank()) return
+        viewModelScope.launch {
+            _isSendingComment.value = true
+            repository.addComment(postId, content)
+                .onSuccess {
+                    postDao.incrementCommentCount(postId)
+                    _isSendingComment.value = false
+                }
+                .onFailure {
+                    _isSendingComment.value = false
+                    _events.emit(SocialFeedEvent.ShowError("Failed to add comment"))
+                }
+        }
+    }
 }
-
-/*** todo: study it.
- * @[Don't remove it.]
- * private var toggleLikeJob: Job? = null
- *     private fun toggleLike(postId: String) {
- *         val postBeforeChange = _uiState.value.posts.find { it.id == postId } ?: return
- *         val wasLiked = postBeforeChange.isLiked
- *         val originalCount = postBeforeChange.likeCount
- *
- *         val targetLiked = !wasLiked
- *         val targetCount = if (targetLiked) originalCount + 1 else originalCount - 1
- *
- *         updatePostInState(postId, targetCount, targetLiked)
- *
- *         toggleLikeJob?.cancel()
- *         toggleLikeJob = viewModelScope.launch {
- *             try {
- *                 if (wasLiked) {
- *                     repository.unLikePost(postId)
- *                 } else {
- *                     repository.likePost(postId)
- *                 }
- *             } catch(e: Exception) {
- *                 updatePostInState(postId, originalCount, wasLiked)
- *                 _events.send(SocialFeedEvent.ShowError("Failed to update like"))
- *             }
- *         }
- *     }
- *
- *     private fun updatePostInState(postId: String, count: Int, isLiked: Boolean) {
- *         _uiState.update { state ->
- *             state.copy(
- *                 posts = state.posts.map { post ->
- *                     if (post.id == postId) {
- *                         post.copy(isLiked = isLiked, likeCount = count)
- *                     } else {
- *                         post
- *                     }
- *                 }
- *             )
- *         }
- *     }*/
-

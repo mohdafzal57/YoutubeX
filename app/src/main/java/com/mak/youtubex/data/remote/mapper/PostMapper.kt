@@ -2,7 +2,7 @@ package com.mak.youtubex.data.remote.mapper
 
 import com.mak.youtubex.data.local.PostEntity
 import com.mak.youtubex.data.remote.dto.post.PostDto
-import com.mak.youtubex.presentation.main.social_feed.Post
+import com.mak.youtubex.domain.model.Post
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

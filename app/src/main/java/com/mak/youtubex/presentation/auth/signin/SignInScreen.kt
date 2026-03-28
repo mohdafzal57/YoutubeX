@@ -47,7 +47,7 @@ import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 import kotlinx.coroutines.launch
 
 @Composable
-fun SignInRoute(
+fun SignInContent(
     viewModel: SignInViewModel = hiltViewModel(),
     onNavigateToSignUp: () -> Unit,
     onNavigateToHome: () -> Unit
@@ -71,7 +71,7 @@ fun SignInRoute(
         }
     }
 
-    SignInScreen(
+    SignInContent(
         state = state,
         onIdentifierChanged = {
             viewModel.handleIntent(SignInIntent.IdentifierChanged(it))
@@ -89,7 +89,7 @@ fun SignInRoute(
 }
 
 @Composable
-fun SignInScreen(
+fun SignInContent(
     state: SignInState,
     onIdentifierChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
@@ -117,16 +117,15 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(120.dp))
 
-            Surface(
-                modifier = Modifier.weight(20f)
+            Box(
+                modifier = Modifier.weight(20f),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Image(
-                        painterResource(R.drawable.youtube_splash2_ic),
-                        modifier = Modifier.size(100.dp),
-                        contentDescription = null
-                    )
-                }
+                Image(
+                    painterResource(R.drawable.youtube_splash2_ic),
+                    modifier = Modifier.size(100.dp),
+                    contentDescription = null
+                )
             }
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -187,7 +186,9 @@ fun SignInScreen(
             OutlinedButton(
                 onClick = onGoogleSignInClick,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().height(44.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
                 shape = RoundedCornerShape(100),
                 // Use outline color for the border to match industry standard input fields
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),

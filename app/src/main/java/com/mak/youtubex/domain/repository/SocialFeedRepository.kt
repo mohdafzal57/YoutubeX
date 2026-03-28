@@ -3,12 +3,10 @@ package com.mak.youtubex.domain.repository
 import android.net.Uri
 import androidx.paging.PagingData
 import com.mak.youtubex.core.data.util.NetworkError
-import com.mak.youtubex.domain.model.Like
-import com.mak.youtubex.presentation.main.social_feed.Post
-import okhttp3.MultipartBody
-import com.mak.youtubex.domain.model.Comment
-import kotlinx.coroutines.flow.Flow
 import com.mak.youtubex.core.data.util.Result
+import com.mak.youtubex.domain.model.Comment
+import com.mak.youtubex.domain.model.Post
+import kotlinx.coroutines.flow.Flow
 
 interface SocialRepository {
 

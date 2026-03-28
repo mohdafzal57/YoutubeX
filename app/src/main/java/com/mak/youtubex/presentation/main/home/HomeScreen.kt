@@ -187,12 +187,15 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            val shouldShowVideoSkeleton = videos.loadState.refresh is LoadState.Loading && videos.itemCount == 0
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                state = listState
+                state = listState,
+                userScrollEnabled = !shouldShowVideoSkeleton
             ) {
-                if (videos.loadState.refresh is LoadState.Loading && videos.itemCount == 0) {
-                    items(5) {
+                if (shouldShowVideoSkeleton) {
+                    items(3) {
                         VideoItemSkeleton()
                     }
                 }

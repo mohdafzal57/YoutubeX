@@ -52,8 +52,7 @@ fun ShortScreen(
             vm = cameraViewModel,
             navigateToUploadDetail = navigateToUploadDetail,
             modifier = Modifier.fillMaxSize(),
-            onRecording = onRecording,
-            onBackClick = onBackClick
+            onRecording = onRecording
         )
     }
 }

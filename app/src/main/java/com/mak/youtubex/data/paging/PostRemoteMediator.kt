@@ -1,5 +1,6 @@
 package com.mak.youtubex.data.paging
 
+import android.util.Log
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
@@ -122,8 +123,8 @@ class PostRemoteMediator(
                 postDao.insertAll(entities)
             }
 
+            Log.d("PagingDebug", "LoadType: $loadType, Page: $page")
             MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
-
         } catch (e: IOException) {
             MediatorResult.Error(e)
         } catch (e: HttpException) {

@@ -4,7 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.mak.youtubex.presentation.auth.signin.SignInRoute
+import com.mak.youtubex.presentation.auth.signin.SignInContent
 import com.mak.youtubex.presentation.auth.signup.SignUpScreen
 
 fun NavGraphBuilder.authNavGraph(
@@ -16,7 +16,7 @@ fun NavGraphBuilder.authNavGraph(
         route = NavGraphs.AUTH
     ) {
         composable(Screen.SignIn.route) {
-            SignInRoute(
+            SignInContent(
                 onNavigateToHome = onNavigateToMain,
                 onNavigateToSignUp = {
                     navController.navigate(Screen.SignUp.route)

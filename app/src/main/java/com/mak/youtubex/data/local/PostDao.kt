@@ -43,6 +43,11 @@ interface PostDao {
     """)
     suspend fun toggleLike(postId: String)
 
+    // ---------- COMMENT SYSTEM ----------
+
+    @Query("UPDATE posts SET commentsCount = commentsCount + 1 WHERE id = :postId")
+    suspend fun incrementCommentCount(postId: String)
+
     // ---------- SINGLE FETCH ----------
 
     @Query("SELECT * FROM posts WHERE id = :postId LIMIT 1")

@@ -12,7 +12,7 @@ fun CommentDto.toDomain(): Comment {
         user = user.toDomain(),
         likesCount = likesCount,
         repliesCount = repliesCount,
-        createdAt = createdAt
+        createdAt = formatSocialMediaTime(createdAt)
     )
 }
 

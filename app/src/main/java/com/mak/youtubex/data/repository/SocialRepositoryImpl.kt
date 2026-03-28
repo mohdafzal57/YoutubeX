@@ -9,8 +9,8 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import com.mak.youtubex.core.data.util.NetworkError
 import com.mak.youtubex.core.data.util.Result
-import com.mak.youtubex.core.data.util.map
 import com.mak.youtubex.core.data.util.safeCall
+import com.mak.youtubex.core.datastore.JwtTokenManager
 import com.mak.youtubex.data.local.YTDatabase
 import com.mak.youtubex.data.paging.CommentPagingSource
 import com.mak.youtubex.data.paging.PostFeedPagingSource
@@ -20,13 +20,15 @@ import com.mak.youtubex.data.remote.dto.comment.CommentRequest
 import com.mak.youtubex.data.remote.mapper.toCompressedMultipart
 import com.mak.youtubex.data.remote.mapper.toDomain
 import com.mak.youtubex.data.remote.mapper.toTextRequestBody
-import com.mak.youtubex.domain.model.Like
-import com.mak.youtubex.domain.repository.SocialRepository
-import com.mak.youtubex.presentation.main.social_feed.Post
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import okhttp3.MultipartBody
 import com.mak.youtubex.domain.model.Comment
+import com.mak.youtubex.domain.model.Post
+import com.mak.youtubex.domain.repository.SocialRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,6 +37,7 @@ import javax.inject.Singleton
 class SocialRepositoryImpl @Inject constructor(
     private val postApi: PostApi,
     private val db: YTDatabase,
+    private val tokenManager: JwtTokenManager,
     private val contentResolver: ContentResolver
 ) : SocialRepository {
 
@@ -56,21 +59,28 @@ class SocialRepositoryImpl @Inject constructor(
             )
         }
     }
-    @OptIn(ExperimentalPagingApi::class)
+
+    @OptIn(ExperimentalPagingApi::class, ExperimentalCoroutinesApi::class)
     override fun getSocialFeed(): Flow<PagingData<Post>> {
-        return Pager(
-            config = PagingConfig(
-                pageSize = 10,
-                prefetchDistance = 1,
-                enablePlaceholders = false
-            ),
-            remoteMediator = PostRemoteMediator(db, postApi),
-            pagingSourceFactory = {
-                db.postDao().pagingSource()
+        return tokenManager.session
+            .filter { it.accessToken != null && it.id != null }
+            .distinctUntilChangedBy { "${it.id}_${it.accessToken}" }
+            .flatMapLatest {
+                Pager(
+                    config = PagingConfig(
+                        pageSize = 10,
+                        prefetchDistance = 1,
+                        initialLoadSize = 10,
+                        enablePlaceholders = false
+                    ),
+                    remoteMediator = PostRemoteMediator(db, postApi),
+                    pagingSourceFactory = {
+                        db.postDao().pagingSource()
+                    }
+                ).flow.map { pagingData ->
+                    pagingData.map { it.toDomain() }
+                }
             }
-        ).flow.map { pagingData ->
-            pagingData.map { it.toDomain() }
-        }
     }
 
     override fun getUserPosts(): Flow<PagingData<Post>> {
