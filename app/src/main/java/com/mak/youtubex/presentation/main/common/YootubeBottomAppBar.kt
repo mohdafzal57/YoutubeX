@@ -276,7 +276,7 @@ fun AddButton(
 }
 
 @Composable
-private fun UserAvatarIcon(userAvatar: String?, isSelected: Boolean) {
+fun UserAvatarIcon(userAvatar: String?, isSelected: Boolean) {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(24.dp)) {
         AsyncImage(
             model = userAvatar,

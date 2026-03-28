@@ -91,6 +91,9 @@ fun SocialFeedScreen(
                 is SocialFeedEvent.ShowError -> {
                     snackbarHostState.showSnackbar(message = event.message)
                 }
+                is SocialFeedEvent.CommentAdded -> {
+
+                }
             }
         }
     }
