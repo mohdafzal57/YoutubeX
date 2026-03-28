@@ -11,7 +11,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -91,6 +95,15 @@ val TOP_LEVEL_DESTINATIONS = mapOf(
 )
 
 @Composable
+private fun navigationItemColors() = ShortNavigationBarItemDefaults.colors(
+    selectedIconColor = YTNavigationDefaults.selectedItemColor(),
+    unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
+    selectedTextColor = YTNavigationDefaults.selectedItemColor(),
+    unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
+    selectedIndicatorColor = Color.Transparent
+)
+
+@Composable
 fun YTNavigationBar(
     modifier: Modifier = Modifier,
     currentRoute: String?,
@@ -98,127 +111,101 @@ fun YTNavigationBar(
     userAvatar: String?,
 ) {
     val outlineColor = MaterialTheme.colorScheme.outline
-    ShortNavigationBar(
-        modifier = modifier
-            .drawWithContent {
-            drawContent()
-            val strokeWidth = 1.dp.toPx()
-            val y = strokeWidth / 2
 
-            drawLine(
-                color = outlineColor,
-                start = Offset(0f, y),
-                end = Offset(size.width, y),
-                strokeWidth = strokeWidth
-            )
-        },
-        containerColor = YTNavigationDefaults.containerColor()
+    ShortNavigationBar(
+        modifier = modifier.drawTopBorder(outlineColor),
+        containerColor = YTNavigationDefaults.containerColor(),
     ) {
         TOP_LEVEL_DESTINATIONS.forEach { (destination, item) ->
             val isSelected = currentRoute?.startsWith(destination) == true
-            val context = LocalContext.current
+
             if (destination == Screen.Short.route) {
-                CompositionLocalProvider(LocalRippleConfiguration provides null) {
-                    ShortNavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            val activity = context as? Activity
-                            val intent = Intent(context, UploadActivity::class.java)
-                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-
-                            context.startActivity(intent)
-
-                            activity?.let {
-                                if (Build.VERSION.SDK_INT >= 34) {
-                                    it.overrideActivityTransition(
-                                        Activity.OVERRIDE_TRANSITION_OPEN,
-                                        R.anim.slide_up,
-                                        R.anim.stay
-                                    )
-                                } else {
-                                    @Suppress("DEPRECATION")
-                                    it.overridePendingTransition(
-                                        R.anim.slide_up,
-                                        R.anim.stay
-                                    )
-                                }
-                            }
-                        },
-                        icon = {
-                            AddButton(
-                                modifier = Modifier
-                                    .size(40.dp),
-                                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                                iconColor = MaterialTheme.colorScheme.onBackground
-                            )
-                        },
-                        label = {},
-                        colors = ShortNavigationBarItemDefaults.colors(
-                            selectedIconColor = YTNavigationDefaults.selectedItemColor(),
-                            unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
-                            selectedTextColor = YTNavigationDefaults.selectedItemColor(),
-                            unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
-                            selectedIndicatorColor = Color.Transparent
-                        )
-                    )
-                }
+                ShortUploadItem(isSelected)
             } else {
-                ShortNavigationBarItem(
-                    selected = isSelected,
-                    onClick = {
-                        onNavigate(destination)
-                    },
-                    icon = {
-                        if (item.title == "You") {
-                            AsyncImage(
-                                model = userAvatar,
-                                contentDescription = "user_avatar",
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .size(24.dp),
-                                contentScale = ContentScale.Crop,
-                                placeholder = painterResource(R.drawable.ic_avatar_placeholder),
-                                fallback = painterResource(R.drawable.ic_avatar_placeholder)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .border(
-                                        width = 2.dp,
-                                        color = if (isSelected) Color.Black else Color.Transparent,
-                                        CircleShape
-                                    )
-                                    .border(
-                                        width = 3.dp,
-                                        color = if (isSelected) Color.White else Color.Transparent,
-                                        CircleShape
-                                    ),
-                            )
-                        } else {
-                            Icon(
-                                imageVector = if (isSelected) item.selectedIcon else item.unSelectedIcon,
-                                contentDescription = item.title
-                            )
-                        }
-                    },
-                    label = {
-                        Text(
-                            text = item.title,
-                            maxLines = 1,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                        )
-                    },
-                    colors = ShortNavigationBarItemDefaults.colors(
-                        selectedIconColor = YTNavigationDefaults.selectedItemColor(),
-                        unselectedIconColor = YTNavigationDefaults.unselectedItemColor(),
-                        selectedTextColor = YTNavigationDefaults.selectedItemColor(),
-                        unselectedTextColor = YTNavigationDefaults.unselectedItemColor(),
-                        selectedIndicatorColor = Color.Transparent
-                    )
+                DefaultNavItem(
+                    item = item,
+                    isSelected = isSelected,
+                    userAvatar = userAvatar,
+                    onClick = { onNavigate(destination) }
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun DefaultNavItem(
+    item: BottomNavigationItem,
+    isSelected: Boolean,
+    userAvatar: String?,
+    onClick: () -> Unit
+) {
+    ShortNavigationBarItem(
+        selected = isSelected,
+        onClick = onClick,
+        icon = {
+            if (item.title == "You") {
+                UserAvatarIcon(userAvatar, isSelected)
+            } else {
+                Icon(
+                    imageVector = if (isSelected) item.selectedIcon else item.unSelectedIcon,
+                    contentDescription = item.title
+                )
+            }
+        },
+        label = {
+            Text(
+                text = item.title,
+                maxLines = 1,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+            )
+        },
+        colors = navigationItemColors()
+    )
+}
+
+@Composable
+private fun ShortUploadItem(
+    isSelected: Boolean,
+) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    CompositionLocalProvider(LocalRippleConfiguration provides null) {
+        ShortNavigationBarItem(
+            selected = isSelected,
+            onClick = {
+                val intent = Intent(context, UploadActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+                context.startActivity(intent)
+
+                activity?.apply {
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        overrideActivityTransition(
+                            Activity.OVERRIDE_TRANSITION_OPEN,
+                            R.anim.slide_up,
+                            R.anim.stay
+                        )
+                    } else {
+                        @Suppress("DEPRECATION")
+                        overridePendingTransition(
+                            R.anim.slide_up,
+                            R.anim.stay
+                        )
+                    }
+                }
+            },
+            icon = {
+                AddButton(
+                    modifier = Modifier.size(40.dp),
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    iconColor = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            label = {},
+            colors = navigationItemColors()
+        )
     }
 }
 
@@ -244,31 +231,14 @@ object YTNavigationDefaults {
         Color.Transparent
 }
 
-@Composable
-fun Modifier.glassEffect(
-    blurRadius: Float = 25f,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
-): Modifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-    this
-        .graphicsLayer {
-            // Use .asComposeRenderEffect() to bridge Android Graphics to Compose
-            renderEffect = RenderEffect
-                .createBlurEffect(blurRadius, blurRadius, Shader.TileMode.CLAMP)
-                .asComposeRenderEffect()
-        }
-        .background(backgroundColor)
-} else {
-    // Fallback for older devices (just background color, no blur)
-    this.background(backgroundColor)
-}
-
 @Preview
 @Composable
 private fun YTNavigationBarPreview() {
-    /*YTNavigationBar(
+    YTNavigationBar(
         currentRoute = Screen.Home.route,
-        onNavigate = {}
-    )*/
+        onNavigate = {},
+        userAvatar = ""
+    )
 }
 
 @Composable
@@ -303,4 +273,39 @@ fun AddButton(
             )
         }
     }
+}
+
+@Composable
+private fun UserAvatarIcon(userAvatar: String?, isSelected: Boolean) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(24.dp)) {
+        AsyncImage(
+            model = userAvatar,
+            contentDescription = "user_avatar",
+            modifier = Modifier.clip(CircleShape).size(24.dp),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(R.drawable.ic_avatar_placeholder),
+            fallback = painterResource(R.drawable.ic_avatar_placeholder)
+        )
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(CircleShape)
+                    .border(2.dp, Color.Black, CircleShape)
+                    .border(3.dp, Color.White, CircleShape)
+            )
+        }
+    }
+}
+
+private fun Modifier.drawTopBorder(color: Color): Modifier = drawWithContent {
+    drawContent()
+    val strokeWidth = 1.dp.toPx()
+    val y = strokeWidth / 2
+    drawLine(
+        color = color,
+        start = Offset(0f, y),
+        end = Offset(size.width, y),
+        strokeWidth = strokeWidth
+    )
 }

@@ -53,6 +53,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -190,46 +192,65 @@ private fun PostItem(
     onCommentClick: () -> Unit
 ) {
     val context = LocalContext.current
-    Column(modifier = Modifier.fillMaxWidth()) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+
             AsyncImage(
                 model = post.avatarUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
             )
+
             Column(
                 modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+
                     Text(
                         text = post.username,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f, fill = false)
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-
-                    Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                     Text(
                         text = post.timestamp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
                     )
                 }
-                Text(
-                    text = post.body,
-                    style = MaterialTheme.typography.bodyLarge,
-                    lineHeight = 18.sp
-                )
+
+                if (post.body.isNotBlank()) {
+                    Text(
+                        text = post.body,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            lineHeight = 20.sp,
+                            letterSpacing = 0.1.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
 
@@ -250,17 +271,23 @@ private fun PostItem(
                 onAction(SocialFeedAction.ToggleLike(post.id))
             },
             onSharePost = {
-                sharePost(context, post.username, post.body, post.imageUrls.firstOrNull())
+                sharePost(
+                    context,
+                    post.username,
+                    post.body,
+                    post.imageUrls.firstOrNull()
+                )
             },
             onCommentClick = { onCommentClick() }
         )
 
         HorizontalDivider(
             thickness = 0.5.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
         )
     }
 }
+
 
 
 @Composable
@@ -289,6 +316,107 @@ fun ImagePager(
                     .pointerInput(Unit) {
                         detectTapGestures(onDoubleTap = { onDoubleTap() })
                     }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PostActions(
+    isLiked: Boolean,
+    likeCount: String,
+    commentCount: String,
+    onLikeToggle: () -> Unit,
+    onCommentClick: () -> Unit,
+    onSharePost: () -> Unit
+) {
+    val tint = if (isLiked) ColorLike else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 56.dp)
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+
+        ActionButton(
+            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+            count = likeCount,
+            tint = tint,
+            onClick = onLikeToggle
+        )
+
+        ActionButton(
+            imageVector = Icons.Outlined.ChatBubbleOutline,
+            count = commentCount,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            onClick = onCommentClick
+        )
+
+        IconButton(
+            onClick = onSharePost,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = "Share post",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+private fun sharePost(
+    context: android.content.Context,
+    username: String,
+    body: String,
+    imageUrl: String?
+) {
+    val sendIntent = android.content.Intent().apply {
+        action = android.content.Intent.ACTION_SEND
+        val shareText = "Check out this post from $username on YoutubeX:\n\n$body" +
+                (if (imageUrl != null) "\n\n$imageUrl" else "")
+
+        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+        type = "text/plain"
+    }
+
+    val shareIntent = android.content.Intent.createChooser(sendIntent, "Share post via")
+    context.startActivity(shareIntent)
+}
+
+
+@Composable
+private fun ActionButton(
+    imageVector: ImageVector,
+    count: String,
+    tint: Color,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = imageVector,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        if (count != "0") {
+            Text(
+                text = count,
+                style = MaterialTheme.typography.labelSmall,
+                color = tint.copy(alpha = 0.9f)
             )
         }
     }
@@ -392,110 +520,4 @@ fun ThreadShimmerItem() {
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
-}
-
-@Composable
-private fun PostActions(
-    isLiked: Boolean,
-    likeCount: Int,
-    commentCount: Int,
-    onLikeToggle: () -> Unit,
-    onCommentClick: () -> Unit,
-    onSharePost: () -> Unit
-) {
-    val tint = if (isLiked) ColorLike else MaterialTheme.colorScheme.onSurfaceVariant
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 56.dp)
-            .padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-
-        ActionButton(
-            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-            count = likeCount,
-            tint = tint,
-            onClick = onLikeToggle
-        )
-
-        ActionButton(
-            imageVector = Icons.Outlined.ChatBubbleOutline,
-            count = commentCount,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            onClick = onCommentClick
-        )
-
-        IconButton(
-            onClick = onSharePost,
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Share,
-                contentDescription = "Share post",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-}
-
-private fun sharePost(
-    context: android.content.Context,
-    username: String,
-    body: String,
-    imageUrl: String?
-) {
-    val sendIntent = android.content.Intent().apply {
-        action = android.content.Intent.ACTION_SEND
-        val shareText = "Check out this post from $username on YoutubeX:\n\n$body" +
-                (if (imageUrl != null) "\n\n$imageUrl" else "")
-
-        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-        type = "text/plain"
-    }
-
-    val shareIntent = android.content.Intent.createChooser(sendIntent, "Share post via")
-    context.startActivity(shareIntent)
-}
-
-@Composable
-private fun ActionButton(
-    imageVector: ImageVector,
-    count: Int,
-    tint: Color,
-    onClick: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(-2.dp)
-    ) {
-
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        if (count > 0) {
-            Text(
-                text = formatCount(count),
-                style = MaterialTheme.typography.bodySmall,
-                color = tint
-            )
-        }
-    }
-}
-
-private fun formatCount(count: Int): String = when {
-    count >= 1_000_000 -> "%.1fM".format(count / 1_000_000.0).trimEnd('0').trimEnd('.')
-    count >= 1_000 -> "%.1fk".format(count / 1_000.0).trimEnd('0').trimEnd('.')
-    else -> count.toString()
 }

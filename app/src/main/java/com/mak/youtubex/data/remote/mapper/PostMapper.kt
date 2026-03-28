@@ -16,8 +16,8 @@ fun PostDto.toDomain(): Post {
         timestamp = formatSocialMediaTime(createdAt),
         body = content,
         imageUrls = images,
-        likeCount = likesCount,
-        commentCount = commentsCount,
+        likeCount = formatCount(likesCount),
+        commentCount = formatCount(commentsCount),
         isLiked = isLiked
     )
 }
@@ -51,8 +51,8 @@ fun PostEntity.toDomain(): Post {
         timestamp = formatSocialMediaTime(createdAt),
         body = content,
         imageUrls = images,
-        likeCount = likesCount,
-        commentCount = commentsCount,
+        likeCount = formatCount(likesCount),
+        commentCount = formatCount(commentsCount),
         isLiked = isLiked
     )
 }
@@ -81,4 +81,10 @@ fun formatSocialMediaTime(isoString: String): String {
     } catch (e: Exception) {
         "" // Fallback just in case the string is malformed
     }
+}
+
+private fun formatCount(count: Int): String = when {
+    count >= 1_000_000 -> "%.1fM".format(count / 1_000_000.0).trimEnd('0').trimEnd('.')
+    count >= 1_000 -> "%.1fk".format(count / 1_000.0).trimEnd('0').trimEnd('.')
+    else -> count.toString()
 }

@@ -56,7 +56,7 @@ import com.mak.youtubex.presentation.main.common.FullScreenLoader
 @Composable
 fun CommentsSheetContent(
     postId: String,
-    commentsCount: Int,
+    commentsCount: String,
     viewModel: SocialFeedViewModel,
     onClose: () -> Unit
 ) {
@@ -89,7 +89,7 @@ fun CommentsSheetContent(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = commentsCount.toString(),
+                    text = commentsCount,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

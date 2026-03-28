@@ -10,7 +10,7 @@ data class Post(
     val timestamp: String,
     val body: String,
     val imageUrls: List<String> = emptyList(),
-    val likeCount: Int = 0,
-    val commentCount: Int = 0,
+    val likeCount: String = "0",
+    val commentCount: String = "0",
     val isLiked: Boolean = false
 )
