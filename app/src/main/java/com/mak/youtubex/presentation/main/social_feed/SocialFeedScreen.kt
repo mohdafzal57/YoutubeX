@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -34,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -91,6 +92,7 @@ fun SocialFeedScreen(
                 is SocialFeedEvent.ShowError -> {
                     snackbarHostState.showSnackbar(message = event.message)
                 }
+
                 is SocialFeedEvent.CommentAdded -> {
 
                 }
@@ -286,11 +288,10 @@ private fun PostItem(
 
         HorizontalDivider(
             thickness = 0.5.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
         )
     }
 }
-
 
 
 @Composable
@@ -298,31 +299,43 @@ fun ImagePager(
     images: List<String>,
     onDoubleTap: () -> Unit
 ) {
+    val firstImageRatio = remember { mutableStateOf(1f) }
     LazyRow(
-        contentPadding = PaddingValues(start = 52.dp),
+        contentPadding = PaddingValues(start = 60.dp, end = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(
             items = images,
             key = { it },
             contentType = { "image" }
-        ) {
+        ) { imageUrl ->
             AsyncImage(
-                model = it,
+                model = imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .fillParentMaxWidth(0.85f)
-                    .aspectRatio(16f / 9f)
+                    .widthIn(max = 300.dp)
+                    .heightIn(max = 288.dp)
+                    .aspectRatio(firstImageRatio.value)
                     .clip(RoundedCornerShape(12.dp))
                     .pointerInput(Unit) {
                         detectTapGestures(onDoubleTap = { onDoubleTap() })
+                    },
+                onSuccess = { state ->
+                    if (firstImageRatio.value == 1f) {
+                        val d = state.result.drawable
+                        val w = d.intrinsicWidth
+                        val h = d.intrinsicHeight
+                        if (w > 0 && h > 0) {
+                            firstImageRatio.value = w.toFloat() / h
+                        }
                     }
+                }
             )
         }
     }
 }
+
 
 @Composable
 private fun PostActions(
@@ -425,25 +438,20 @@ private fun ActionButton(
     }
 }
 
+@Preview
 @Composable
 fun PostSkeleton() {
     LazyColumn(
         userScrollEnabled = false
     ) {
-        items(3) {
-            ThreadShimmerItem()
-            HorizontalDivider(
-                Modifier,
-                thickness = 1.dp,
-                color = Color.LightGray.copy(alpha = 0.3f)
-            )
+        items(4) {
+            PostsShimmer()
         }
     }
 }
 
-@Preview
 @Composable
-fun ThreadShimmerItem() {
+fun PostsShimmer() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -460,26 +468,13 @@ fun ThreadShimmerItem() {
         Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(140.dp)
-                        .height(18.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .shimmerEffect()
-                )
-                Box(
-                    modifier = Modifier
-                        .width(40.dp)
-                        .height(16.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .shimmerEffect()
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(18.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -506,21 +501,6 @@ fun ThreadShimmerItem() {
                     .clip(RoundedCornerShape(8.dp))
                     .shimmerEffect()
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                repeat(4) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .shimmerEffect()
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

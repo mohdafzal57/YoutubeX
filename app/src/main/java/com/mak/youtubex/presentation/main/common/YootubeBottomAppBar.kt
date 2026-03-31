@@ -291,8 +291,8 @@ fun UserAvatarIcon(userAvatar: String?, isSelected: Boolean) {
                 modifier = Modifier
                     .matchParentSize()
                     .clip(CircleShape)
-                    .border(2.dp, Color.Black, CircleShape)
-                    .border(3.dp, Color.White, CircleShape)
+                    .border(2.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                    .border(3.dp, MaterialTheme.colorScheme.background, CircleShape)
             )
         }
     }
