@@ -13,6 +13,8 @@ interface SocialRepository {
     fun getSocialFeed(): Flow<PagingData<Post>>
     fun getUserPosts(): Flow<PagingData<Post>>
 
+    suspend fun getPostById(postId: String): Result<Post, NetworkError>
+
     suspend fun likePost(
         postId: String
     ): Result<Unit, NetworkError>

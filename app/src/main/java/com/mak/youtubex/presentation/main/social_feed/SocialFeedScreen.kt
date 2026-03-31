@@ -191,7 +191,7 @@ fun SocialFeedScreen(
 }
 
 @Composable
-private fun PostItem(
+fun PostItem(
     post: Post,
     onAction: (SocialFeedAction) -> Unit,
     onCommentClick: () -> Unit
@@ -278,9 +278,9 @@ private fun PostItem(
             onSharePost = {
                 sharePost(
                     context,
+                    post.id,
                     post.username,
-                    post.body,
-                    post.imageUrls.firstOrNull()
+                    post.body
                 )
             },
             onCommentClick = { onCommentClick() }
@@ -386,14 +386,14 @@ private fun PostActions(
 
 private fun sharePost(
     context: android.content.Context,
+    postId: String,
     username: String,
-    body: String,
-    imageUrl: String?
+    body: String
 ) {
     val sendIntent = android.content.Intent().apply {
         action = android.content.Intent.ACTION_SEND
-        val shareText = "Check out this post from $username on YoutubeX:\n\n$body" +
-                (if (imageUrl != null) "\n\n$imageUrl" else "")
+        val deepLink = "https://youtubex.com/post/$postId"
+        val shareText = "Check out this post from $username on YoutubeX:\n\n$body\n\n$deepLink"
 
         putExtra(android.content.Intent.EXTRA_TEXT, shareText)
         type = "text/plain"

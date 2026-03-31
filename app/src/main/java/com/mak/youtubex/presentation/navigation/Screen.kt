@@ -29,6 +29,10 @@ sealed class Screen(val route: String) {
         }
     }
 
+    data object PostDetail : Screen("post_detail/{$ARG_POST_ID}") {
+        fun createRoute(postId: String) = "post_detail/$postId"
+    }
+
     data object UploadVideoDetail : Screen("video_upload_detail/{$ARG_VIDEO_URI}") {
         fun createRoute(videoUri: String): String {
             val encoded = URLEncoder.encode(videoUri, StandardCharsets.UTF_8.toString())
@@ -45,5 +49,6 @@ sealed class Screen(val route: String) {
         const val ARG_USERNAME = "username"
         const val ARG_OWNER_ID = "ownerId"
         const val ARG_VIDEO_URI = "videoUri"
+        const val ARG_POST_ID = "postId"
     }
 }

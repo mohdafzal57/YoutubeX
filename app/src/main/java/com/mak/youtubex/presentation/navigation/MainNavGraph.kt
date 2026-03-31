@@ -9,12 +9,14 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import androidx.navigation.navDeepLink
 import com.mak.youtubex.presentation.main.channel.ChannelScreen
 import com.mak.youtubex.presentation.main.home.HomeScreen
 import com.mak.youtubex.presentation.main.player.PlayerScreen
 import com.mak.youtubex.presentation.main.player.PlayerViewModel
 import com.mak.youtubex.presentation.main.search.SearchScreen
 import com.mak.youtubex.presentation.main.settings.ProfileScreen
+import com.mak.youtubex.presentation.main.social_feed.PostDetailScreen
 import com.mak.youtubex.presentation.main.social_feed.SocialFeedScreen
 import com.mak.youtubex.presentation.main.subscription.SubscriptionScreen
 import java.net.URLDecoder
@@ -106,6 +108,21 @@ fun NavGraphBuilder.mainNavGraph(
                 videoUrl = url,
                 uiState = uiState,
                 onEvent = viewModel::onEvent,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.PostDetail.route,
+            arguments = listOf(
+                navArgument(Screen.ARG_POST_ID) { type = NavType.StringType }
+            ),
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "https://youtubex.com/post/{${Screen.ARG_POST_ID}}" },
+                navDeepLink { uriPattern = "youtubex://post/{${Screen.ARG_POST_ID}}" }
+            )
+        ) {
+            PostDetailScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

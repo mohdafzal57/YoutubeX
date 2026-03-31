@@ -9,6 +9,7 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import com.mak.youtubex.core.data.util.NetworkError
 import com.mak.youtubex.core.data.util.Result
+import com.mak.youtubex.core.data.util.map
 import com.mak.youtubex.core.data.util.safeCall
 import com.mak.youtubex.core.datastore.JwtTokenManager
 import com.mak.youtubex.data.local.YTDatabase
@@ -95,6 +96,14 @@ class SocialRepositoryImpl @Inject constructor(
             }
         ).flow.map { pagingData ->
             pagingData.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun getPostById(postId: String): Result<Post, NetworkError> {
+        return safeCall {
+            postApi.getPostById(postId)
+        }.map { postDto -> 
+            postDto.toDomain()
         }
     }
 

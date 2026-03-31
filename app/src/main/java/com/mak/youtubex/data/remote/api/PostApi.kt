@@ -27,6 +27,11 @@ interface PostApi {
         @Query("limit") limit: Int = 10
     ): Response<ApiResponse<PaginatedResponseDto<PostDto>>>
 
+    @GET("posts/{postId}")
+    suspend fun getPostById(
+        @Path("postId") postId: String
+    ): Response<ApiResponse<PostDto>>
+
     @GET("posts/user/{userId}")
     suspend fun getUserPosts(
         @Path("userId") userId: String,

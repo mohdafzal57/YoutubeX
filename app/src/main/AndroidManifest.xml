@@ -40,6 +40,25 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- App Link: https://youtubex.com/post/{id} -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="youtubex.com" />
+                <data android:pathPrefix="/post" />
+            </intent-filter>
+
+            <!-- Deep Link: youtubex://post/{id} -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="youtubex" />
+                <data android:host="post" />
+            </intent-filter>
         </activity>
 
         <meta-data
