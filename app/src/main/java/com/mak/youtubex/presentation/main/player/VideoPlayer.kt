@@ -10,11 +10,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Fullscreen
@@ -22,8 +28,18 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -35,13 +51,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.mak.youtubex.presentation.upload_video.VideoPlayerAction
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -51,17 +67,16 @@ fun VideoPlayer(
     modifier: Modifier = Modifier,
     videoUrl: String,
     videoTitle: String = "",
-    viewModel: VideoPlayerViewModel = viewModel(),
+    isPlaying: Boolean,
+    showControls: Boolean,
+    currentPosition: Long,
+    totalDuration: Long,
+    onAction: (VideoPlayerAction) -> Unit
 ) {
     val context = LocalContext.current
 
-    val isPlaying by viewModel.isPlaying.collectAsState()
-    val showControls by viewModel.showControls.collectAsState()
-    val currentPosition by viewModel.currentPosition.collectAsState()
-    val totalDuration by viewModel.totalDuration.collectAsState()
-
-    // Seek flash state: null = hidden, true = forward, false = rewind
     var seekFlash by remember { mutableStateOf<Boolean?>(null) }
+    var isMuted by remember { mutableStateOf(false) }
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply { playWhenReady = true }
@@ -75,18 +90,23 @@ fun VideoPlayer(
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlayingState: Boolean) {
-                viewModel.syncPlayerState(isPlayingState)
+                onAction(VideoPlayerAction.PlayPause(isPlayingState))
             }
+
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_READY) {
-                    viewModel.updateProgress(
-                        position = exoPlayer.currentPosition,
-                        duration = exoPlayer.duration.coerceAtLeast(0L)
+                    onAction(
+                        VideoPlayerAction.Progress(
+                            exoPlayer.currentPosition,
+                            exoPlayer.duration.coerceAtLeast(0L)
+                        )
                     )
                 }
             }
         }
+
         exoPlayer.addListener(listener)
+
         onDispose {
             exoPlayer.removeListener(listener)
             exoPlayer.release()
@@ -95,9 +115,11 @@ fun VideoPlayer(
 
     LaunchedEffect(isPlaying) {
         while (isActive && isPlaying) {
-            viewModel.updateProgress(
-                position = exoPlayer.currentPosition,
-                duration = exoPlayer.duration.coerceAtLeast(0L)
+            onAction(
+                VideoPlayerAction.Progress(
+                    exoPlayer.currentPosition,
+                    exoPlayer.duration.coerceAtLeast(0L)
+                )
             )
             delay(500)
         }
@@ -106,11 +128,10 @@ fun VideoPlayer(
     LaunchedEffect(showControls, isPlaying) {
         if (showControls && isPlaying) {
             delay(3000)
-            viewModel.hideControls()
+            onAction(VideoPlayerAction.HideControls)
         }
     }
 
-    // Auto-dismiss seek flash after 800ms
     LaunchedEffect(seekFlash) {
         if (seekFlash != null) {
             delay(800)
@@ -123,13 +144,14 @@ fun VideoPlayer(
             .fillMaxWidth()
             .background(Color.Black)
     ) {
-        // --- Video Layer ---
+
+        // Video
         AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = false
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT // YouTube uses FIT, not ZOOM
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -139,31 +161,37 @@ fun VideoPlayer(
             modifier = Modifier.fillMaxSize()
         )
 
-        // --- Gesture Overlay ---
+        // Gestures
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .pointerInput(Unit) {
                     detectTapGestures(
-                        onTap = { viewModel.toggleControls() },
+                        onTap = {
+                            onAction(VideoPlayerAction.ToggleControls)
+                        },
                         onDoubleTap = { offset ->
                             val center = size.width / 2
                             val seekAmount = 10_000L
                             val isForward = offset.x >= center
+
                             val newPosition = if (isForward) {
-                                (exoPlayer.currentPosition + seekAmount).coerceAtMost(totalDuration)
+                                (exoPlayer.currentPosition + seekAmount)
+                                    .coerceAtMost(totalDuration)
                             } else {
-                                (exoPlayer.currentPosition - seekAmount).coerceAtLeast(0L)
+                                (exoPlayer.currentPosition - seekAmount)
+                                    .coerceAtLeast(0L)
                             }
+
                             seekFlash = isForward
-                            viewModel.onSeek(newPosition)
+                            onAction(VideoPlayerAction.Seek(newPosition))
                             exoPlayer.seekTo(newPosition)
                         }
                     )
                 }
         )
 
-        // --- Seek Flash Indicators (YouTube double-tap circles) ---
+        // Seek Flash
         seekFlash?.let { isForward ->
             Box(
                 modifier = Modifier
@@ -189,16 +217,15 @@ fun VideoPlayer(
             }
         }
 
-        // --- Controls Layer ---
+        // Controls
         AnimatedVisibility(
             visible = showControls,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.matchParentSize()
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize()) {
 
-                // Top gradient scrim + title (YouTube style)
                 if (videoTitle.isNotBlank()) {
                     Box(
                         modifier = Modifier
@@ -207,133 +234,127 @@ fun VideoPlayer(
                             .align(Alignment.TopCenter)
                             .background(
                                 Brush.verticalGradient(
-                                    colors = listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
+                                    listOf(
+                                        Color.Black.copy(alpha = 0.7f),
+                                        Color.Transparent
+                                    )
                                 )
                             )
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        contentAlignment = Alignment.TopStart
+                            .padding(16.dp)
                     ) {
                         Text(
                             text = videoTitle,
                             color = Color.White,
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                // Center play/pause button
+                // Center Play
                 IconButton(
-                    onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
+                    onClick = {
+                        val shouldPlay = !isPlaying
+                        if (shouldPlay) exoPlayer.play() else exoPlayer.pause()
+                        onAction(VideoPlayerAction.PlayPause(shouldPlay))
+                    },
                     modifier = Modifier
                         .align(Alignment.Center)
                         .size(64.dp)
-                        .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                        .background(Color.Black.copy(0.4f), CircleShape)
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = "Play/Pause",
+                        contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(36.dp)
                     )
                 }
 
-                // Bottom gradient scrim + controls bar
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+                                listOf(Color.Transparent, Color.Black.copy(0.8f))
                             )
                         )
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 8.dp)
+                        .padding(12.dp)
                 ) {
-                    // Slim progress slider
+
                     Slider(
                         value = currentPosition.toFloat(),
-                        onValueChange = { newPosition ->
-                            viewModel.onSeek(newPosition.toLong())
-                            exoPlayer.seekTo(newPosition.toLong())
+                        onValueChange = {
+                            val pos = it.toLong()
+                            onAction(VideoPlayerAction.Seek(pos))
+                            exoPlayer.seekTo(pos)
                         },
-                        valueRange = 0f..(totalDuration.toFloat().coerceAtLeast(1f)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(20.dp), // tighter than default
+                        valueRange = 0f..totalDuration.toFloat().coerceAtLeast(1f),
                         colors = SliderDefaults.colors(
                             thumbColor = Color.Red,
                             activeTrackColor = Color.Red,
-                            inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                        )
+                            inactiveTrackColor = Color.Gray,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(28.dp)
                     )
 
-                    // Bottom row: [Play] [Vol] [Time] ... [Fullscreen]
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Play/Pause (redundant but YouTube has it here too)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+
                         IconButton(
-                            onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
-                            modifier = Modifier.size(36.dp)
+                            onClick = {
+                                val shouldPlay = !isPlaying
+                                if (shouldPlay) exoPlayer.play() else exoPlayer.pause()
+                                onAction(VideoPlayerAction.PlayPause(shouldPlay))
+                            }
                         ) {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = "Play/Pause",
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
+                                contentDescription = null,
+                                tint = Color.White
                             )
                         }
 
-                        // Volume button (wired to mute toggle)
-                        var isMuted by remember { mutableStateOf(false) }
                         IconButton(
                             onClick = {
                                 isMuted = !isMuted
                                 exoPlayer.volume = if (isMuted) 0f else 1f
-                            },
-                            modifier = Modifier.size(36.dp)
+                                onAction(VideoPlayerAction.Mute(isMuted))
+                            }
                         ) {
                             Icon(
                                 imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                                contentDescription = "Volume",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                contentDescription = null,
+                                tint = Color.White
                             )
                         }
 
-                        // Time display
                         Text(
                             text = "${currentPosition.formatTime()} / ${totalDuration.formatTime()}",
                             color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(start = 4.dp)
+                            fontSize = 12.sp
                         )
 
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(Modifier.weight(1f))
 
-                        // Fullscreen button
                         val activity = context as? Activity
                         IconButton(
                             onClick = {
                                 activity?.requestedOrientation =
-                                    if (activity.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+                                    if (activity.requestedOrientation ==
+                                        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                                    )
                                         ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                                     else
                                         ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                            },
-                            modifier = Modifier.size(36.dp)
+                            }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Fullscreen,
-                                contentDescription = "Fullscreen",
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
+                                contentDescription = null,
+                                tint = Color.White
                             )
                         }
                     }
@@ -342,6 +363,7 @@ fun VideoPlayer(
         }
     }
 }
+
 
 // Extension — formats millis to m:ss or h:mm:ss
 fun Long.formatTime(): String {

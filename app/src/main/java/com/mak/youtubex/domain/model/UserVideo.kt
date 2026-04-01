@@ -13,7 +13,6 @@ data class UserVideo(
     val views: Int,
     val isPublished: Boolean,
     val createdAt: String,
-    val updatedAt: String,
     val username: String,
     val avatar: String
 )

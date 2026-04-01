@@ -9,7 +9,6 @@ data class VideoFeed(
     val duration: String,
     val views: Int,
     val createdAt: String,
-    val updatedAt: String,
     val likesCount: String,
     val isLikedByMe: Boolean,
     val username: String,

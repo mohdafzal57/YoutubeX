@@ -18,7 +18,7 @@ fun VideoDto.toDomain(): Video {
         duration = duration,
         views = views,
         ownerId = ownerId,
-        createdAt = createdAt
+        createdAt = formatSocialMediaTime(createdAt)
     )
 }
 
@@ -36,8 +36,7 @@ fun VideoFeedDto.toDomain(): VideoFeed {
         username = username,
         avatar = avatar,
         ownerId = ownerId,
-        updatedAt = formatDate(updatedAt),
-        createdAt = formatDate(createdAt),
+        createdAt = formatSocialMediaTime(createdAt),
     )
 }
 

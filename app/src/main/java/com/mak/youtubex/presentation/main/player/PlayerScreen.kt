@@ -32,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,8 +56,14 @@ fun PlayerScreen(
     videoUrl: String,
     uiState: PlayerUiState,
     onEvent: (PlayerEvent) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: VideoPlayerViewModel = hiltViewModel()
 ) {
+    val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
+    val showControls by viewModel.showControls.collectAsStateWithLifecycle()
+    val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
+    val totalDuration by viewModel.totalDuration.collectAsStateWithLifecycle()
+
     val sheetState = rememberModalBottomSheetState()
 
     Box(
@@ -65,7 +74,12 @@ fun PlayerScreen(
         // 1. Video Background
         VideoPlayer(
             videoUrl = videoUrl,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            isPlaying = isPlaying,
+            showControls = showControls,
+            currentPosition = currentPosition,
+            totalDuration = totalDuration,
+            onAction = viewModel::onAction
         )
 
         // 2. Bottom gradient scrim — text legibility

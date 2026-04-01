@@ -379,16 +379,9 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Channel Name
-            Text(
-                text = video.username,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             // Views and Time
             Text(
-                text = "${video.views} • ${video.createdAt}",
+                text = "${video.views} views • ${video.createdAt}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

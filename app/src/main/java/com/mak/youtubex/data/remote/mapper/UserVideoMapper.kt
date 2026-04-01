@@ -15,8 +15,7 @@ fun UserVideoDto.toDomain(): UserVideo {
         duration = formatDuration(duration),
         views = views,
         isPublished = isPublished,
-        createdAt = formatDate(createdAt),
-        updatedAt = formatDate(updatedAt),
+        createdAt = formatSocialMediaTime(createdAt),
         username = username,
         avatar = avatar
     )

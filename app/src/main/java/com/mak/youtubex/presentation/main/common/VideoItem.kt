@@ -105,7 +105,7 @@ fun VideoItem(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${video.username} • ${video.likesCount} views • ${video.createdAt}",
+                    text = "${video.username} • ${video.views} views • ${video.createdAt}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

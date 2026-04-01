@@ -1,6 +1,7 @@
 package com.mak.youtubex.presentation.main.player
 
 import androidx.lifecycle.ViewModel
+import com.mak.youtubex.presentation.upload_video.VideoPlayerAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,26 +23,41 @@ class VideoPlayerViewModel @Inject constructor() : ViewModel() {
     private val _totalDuration = MutableStateFlow(0L)
     val totalDuration: StateFlow<Long> = _totalDuration.asStateFlow()
 
-    // Synced directly from the ExoPlayer's actual state
+    private val _isMuted = MutableStateFlow(false)
+    val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
+
+    fun onAction(action: VideoPlayerAction) {
+        when (action) {
+
+            is VideoPlayerAction.ToggleControls -> {
+                _showControls.value = !_showControls.value
+            }
+
+            is VideoPlayerAction.HideControls -> {
+                _showControls.value = false
+            }
+
+            is VideoPlayerAction.PlayPause -> {
+                _isPlaying.value = action.play
+            }
+
+            is VideoPlayerAction.Seek -> {
+                _currentPosition.value = action.position
+            }
+
+            is VideoPlayerAction.Progress -> {
+                _currentPosition.value = action.position
+                _totalDuration.value = action.duration
+            }
+
+            is VideoPlayerAction.Mute -> {
+                _isMuted.value = action.mute
+            }
+        }
+    }
+
+    // Keep this only if syncing with ExoPlayer callbacks
     fun syncPlayerState(isPlayingNow: Boolean) {
         _isPlaying.value = isPlayingNow
-    }
-
-    fun toggleControls() {
-        _showControls.value = !_showControls.value
-    }
-
-    fun hideControls() {
-        _showControls.value = false
-    }
-
-    fun updateProgress(position: Long, duration: Long) {
-        _currentPosition.value = position
-        _totalDuration.value = duration
-    }
-
-    // Called when user actively scrubs the timeline or double-taps
-    fun onSeek(newPosition: Long) {
-        _currentPosition.value = newPosition
     }
 }
