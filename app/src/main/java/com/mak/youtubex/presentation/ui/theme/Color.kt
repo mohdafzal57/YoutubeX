@@ -50,4 +50,4 @@ val Warning = Color(0xFFFFA000)
 val ErrorLight = Color(0xFFBA1A1A)
 val ErrorDark = Color(0xFFFFB4AB)
 
-val ColorLike = Color(0xFFF91880)
+val ColorLike = Color(0xFFED4956)

@@ -279,9 +279,7 @@ fun RecordingButton(
         if (s == RecordingUiState.Recording) Color.Red else Color.White
     }
 
-    val innerColor by transition.animateColor(label = "inner_color") { s ->
-        Color.Red // can evolve later (pulse, gradient, etc.)
-    }
+    val innerColor = Color.Red
 
     Box(
         modifier = modifier

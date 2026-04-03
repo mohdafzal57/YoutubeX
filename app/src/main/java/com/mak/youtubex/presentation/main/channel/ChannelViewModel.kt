@@ -75,10 +75,10 @@ class ChannelViewModel @Inject constructor(
     fun onIntent(intent: ChannelIntent) {
         when (intent) {
             ChannelIntent.ToggleSubscription -> toggleSubscription()
+
             is ChannelIntent.OrderType -> {
                 // Update UI state (for the UI checkmarks)
                 _uiState.update { it.copy(sortType = intent.sortType) }
-
                 // Update params (this triggers flatMapLatest and refreshes the list)
                 _videoParams.update { it.copy(sortType = intent.sortType.value) }
             }
@@ -113,10 +113,6 @@ class ChannelViewModel @Inject constructor(
         _uiState.update { it.copy(isSubscribed = !currentState.isSubscribed) }
         viewModelScope.launch {
             subscriptionRepository.toggleSubscription(currentState.profile.id)
-                .onSuccess {
-//                    _uiState.update { it.copy(isSubscribed = !currentState.isSubscribed) }
-                    _events.trySend(ChannelEvent.SubscriptionUpdated)
-                }
                 .onFailure { message ->
                     if (message == NetworkError.EMPTY_HAND) return@onFailure
                     _uiState.update { it.copy(isSubscribed = currentState.isSubscribed) }
@@ -141,7 +137,6 @@ sealed interface ChannelIntent {
 
 sealed interface ChannelEvent {
     data class ShowError(val message: String) : ChannelEvent
-    object SubscriptionUpdated : ChannelEvent
 }
 
 data class UserVideoState(

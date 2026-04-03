@@ -40,11 +40,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.mak.youtubex.domain.model.UserChannel
 import com.mak.youtubex.domain.model.UserVideo
+import com.mak.youtubex.domain.model.Video
 import com.mak.youtubex.presentation.main.common.AppScaffold
 import com.mak.youtubex.presentation.main.common.BottomLoader
 import com.mak.youtubex.presentation.main.common.FullScreenLoader
@@ -60,127 +62,47 @@ fun ChannelScreen(
     viewModel: ChannelViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = LocalSnackbarHostState.current
-    var showBottomSheet by remember { mutableStateOf(false) }
     val videos = viewModel.videos.collectAsLazyPagingItems()
+    val snackbarHostState = LocalSnackbarHostState.current
 
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    // Side Effects
     LaunchedEffect(Unit) {
-        viewModel.events.collect {
-            when (it) {
-                is ChannelEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(it.message)
-                }
-
-                ChannelEvent.SubscriptionUpdated -> {
-                    snackbarHostState.showSnackbar("Subscription updated")
-                }
+        viewModel.events.collect { event ->
+            if (event is ChannelEvent.ShowError) {
+                snackbarHostState.showSnackbar(event.message)
             }
         }
     }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         AppScaffold(
-            title = uiState.profile?.username ?: "",
+            title = uiState.profile?.username.orEmpty(),
             showBackButton = true,
-            onBackClick = onNavigateBack,
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground
-        ) { paddingValues ->
+            onBackClick = onNavigateBack
+        ) { padding ->
 
-            if (uiState.isLoading) {
-                FullScreenLoader()
-                return@AppScaffold
-
-            } else if (uiState.profile != null) {
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .background(MaterialTheme.colorScheme.background),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    item {
-                        // --- 1. Banner with Rounded Corners ---
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp) // Creates the "floating" banner look
-                                .aspectRatio(3.5f) // Matches the slim profile of YouTube banners
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            AsyncImage(
-                                model = uiState.profile?.coverImage ?: "",
-                                contentDescription = "Channel Banner",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    }
-
-                    item {
-                        ChannelHeaderSection(uiState.profile!!)
-                    }
-
-
-                    item {
-                        YouTubeSubscribeButton(
-                            isSubscribed = uiState.isSubscribed,
-                            onClick = {
-                                if (uiState.isSubscribed)
-                                    showBottomSheet = true
-                                else
-                                    viewModel.onIntent(ChannelIntent.ToggleSubscription)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                        Spacer(modifier = Modifier.padding(bottom = 16.dp))
-                    }
-
-                    item {
-                        FilterChipsRow(
-                            selectedSort = uiState.sortType,
-                            onAction = viewModel::onIntent
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    items(
-                        count = videos.itemCount,
-                        key = videos.itemKey { it.id }
-                    ) { index ->
-                        videos[index]?.let { video ->
-                            VideoCard(
-                                video = video,
-                                onClick = { onPlayVideo(video.videoFile, video.id) },
-                            )
-                        }
-                    }
-                    when (videos.loadState.append) {
-                        is LoadState.Loading -> {
-                            item { BottomLoader() }
-                        }
-
-                        is LoadState.Error -> {
-                            item {
-                                RetryFooter(
-                                    onRetry = {videos.retry()}
-                                )
-                            }
-                        }
-
-                        else -> {}
+            ChannelContent(
+                uiState = uiState,
+                videos = videos,
+                padding = padding,
+                onIntent = viewModel::onIntent,
+                onPlayVideo = onPlayVideo,
+                onSubscribeClick = {
+                    if (uiState.isSubscribed) {
+                        showBottomSheet = true
+                    } else {
+                        viewModel.onIntent(ChannelIntent.ToggleSubscription)
                     }
                 }
-            }
-
+            )
         }
     }
+
     if (showBottomSheet) {
         NotificationSettingsSheet(
             onDismiss = { showBottomSheet = false },
@@ -191,6 +113,129 @@ fun ChannelScreen(
         )
     }
 }
+
+@Composable
+private fun ChannelContent(
+    uiState: ChannelProfileState,
+    videos: LazyPagingItems<UserVideo>,
+    padding: PaddingValues,
+    onIntent: (ChannelIntent) -> Unit,
+    onPlayVideo: (String, String) -> Unit,
+    onSubscribeClick: () -> Unit
+) {
+    when {
+        uiState.isLoading -> {
+            FullScreenLoader()
+        }
+
+        uiState.profile != null -> {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+
+                // 🔹 Banner
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                            .aspectRatio(3.5f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        AsyncImage(
+                            model = uiState.profile.coverImage ?: "",
+                            contentDescription = "Channel Banner",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+
+                // 🔹 Header
+                item {
+                    ChannelHeaderSection(uiState.profile)
+                }
+
+                // 🔹 Subscribe Button
+                item {
+                    Column {
+                        YouTubeSubscribeButton(
+                            isSubscribed = uiState.isSubscribed,
+                            onClick = onSubscribeClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                // 🔹 Filters
+                item {
+                    FilterChipsRow(
+                        selectedSort = uiState.sortType,
+                        onAction = onIntent
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // 🔹 Video List
+                items(
+                    count = videos.itemCount,
+                    key = videos.itemKey { it.id }
+                ) { index ->
+                    videos[index]?.let { video ->
+                        VideoCard(
+                            video = video,
+                            onClick = {
+                                onPlayVideo(video.videoFile, video.id)
+                            }
+                        )
+                    }
+                }
+
+                // 🔹 Paging Footer
+                when (videos.loadState.append) {
+                    is LoadState.Loading -> {
+                        item { BottomLoader() }
+                    }
+
+                    is LoadState.Error -> {
+                        item {
+                            RetryFooter(
+                                onRetry = { videos.retry() }
+                            )
+                        }
+                    }
+
+                    else -> Unit
+                }
+            }
+        }
+
+        else -> {
+            // Fallback state (important)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Something went wrong",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+    }
+}
+
+
 @Composable
 fun ChannelHeaderSection(
     profile: UserChannel,

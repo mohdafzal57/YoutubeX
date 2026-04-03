@@ -157,7 +157,8 @@ private fun DefaultNavItem(
             Text(
                 text = item.title,
                 maxLines = 1,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                letterSpacing = (-0.1).sp
             )
         },
         colors = navigationItemColors()

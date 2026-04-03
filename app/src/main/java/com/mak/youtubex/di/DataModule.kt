@@ -1,5 +1,7 @@
 package com.mak.youtubex.di
 
+import com.mak.youtubex.core.device.DeviceIdProvider
+import com.mak.youtubex.core.device.DeviceIdProviderImpl
 import com.mak.youtubex.data.local.YTDatabase
 import com.mak.youtubex.data.remote.api.PostApi
 import com.mak.youtubex.data.repository.LikeRepositoryImpl
@@ -75,4 +77,10 @@ abstract class DataModule {
     abstract fun bindMediaPrefetcher(
         impl: CoilMediaPrefetcher
     ): MediaPrefetcher
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceIdProvider(
+        impl: DeviceIdProviderImpl
+    ): DeviceIdProvider
 }

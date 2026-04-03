@@ -2,15 +2,18 @@ package com.mak.youtubex.data.remote.api
 
 import com.mak.youtubex.data.remote.dto.ApiResponse
 import com.mak.youtubex.data.remote.dto.PaginatedResponseDto
+import com.mak.youtubex.data.remote.dto.video.AddViewRequestDto
 import com.mak.youtubex.data.remote.dto.video.UserVideoDto
 import com.mak.youtubex.data.remote.dto.video.VideoFeedDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface VideoApi {
@@ -40,4 +43,10 @@ interface VideoApi {
         @Query("limit") limit: Int,
         @Query("query") query: String?
     ): Response<ApiResponse<PaginatedResponseDto<VideoFeedDto>>>
+
+    @POST("videos/{videoId}/view")
+    suspend fun addView(
+        @Path("videoId") videoId: String,
+        @Body request: AddViewRequestDto
+    ): Response<ApiResponse<Unit>>
 }

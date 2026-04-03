@@ -1,6 +1,10 @@
 package com.mak.youtubex.presentation.main.social_feed
 
+import android.content.Context
+import android.content.Intent
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +12,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,16 +20,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +48,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,11 +56,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,6 +75,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
+import com.mak.youtubex.R
 import com.mak.youtubex.domain.model.Post
 import com.mak.youtubex.presentation.main.common.YTPullToRefreshBox
 import com.mak.youtubex.presentation.main.common.YTTopAppBar
@@ -72,6 +83,7 @@ import com.mak.youtubex.presentation.main.home.EmptyStateScreen
 import com.mak.youtubex.presentation.main.home.shimmerEffect
 import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 import com.mak.youtubex.presentation.ui.theme.ColorLike
+import com.mak.youtubex.presentation.ui.theme.YTTheme
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -216,8 +228,9 @@ fun PostItem(
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
+                    .size(44.dp)
+                    .clip(CircleShape),
+                placeholder = ColorPainter(MaterialTheme.colorScheme.surface)
             )
 
             Column(
@@ -252,8 +265,7 @@ fun PostItem(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             lineHeight = 20.sp,
                             letterSpacing = 0.1.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        )
                     )
                 }
             }
@@ -299,43 +311,66 @@ fun ImagePager(
     images: List<String>,
     onDoubleTap: () -> Unit
 ) {
-    val firstImageRatio = remember { mutableStateOf(1f) }
+    val shape = RoundedCornerShape(12.dp)
+    val isDark = isSystemInDarkTheme()
+    val borderColor = if (isDark) {
+        Color.DarkGray
+    } else {
+        Color.Transparent
+    }
     LazyRow(
         contentPadding = PaddingValues(start = 60.dp, end = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(
-            items = images,
-            key = { it },
-            contentType = { "image" }
-        ) { imageUrl ->
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .widthIn(max = 300.dp)
-                    .heightIn(max = 288.dp)
-                    .aspectRatio(firstImageRatio.value)
-                    .clip(RoundedCornerShape(12.dp))
-                    .pointerInput(Unit) {
-                        detectTapGestures(onDoubleTap = { onDoubleTap() })
-                    },
-                onSuccess = { state ->
-                    if (firstImageRatio.value == 1f) {
-                        val d = state.result.drawable
-                        val w = d.intrinsicWidth
-                        val h = d.intrinsicHeight
-                        if (w > 0 && h > 0) {
-                            firstImageRatio.value = w.toFloat() / h
+        if (images.size > 1) {
+            items(
+                items = images,
+                key = { it },
+                contentType = { "image" }
+            ) { imageUrl ->
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    placeholder = ColorPainter(MaterialTheme.colorScheme.surface),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .heightIn(max = 288.dp)
+                        .clip(shape)
+                        .border(
+                            width = 0.7.dp,
+                            color = borderColor,
+                            shape = shape
+                        )
+                        .pointerInput(Unit) {
+                            detectTapGestures(onDoubleTap = { onDoubleTap() })
                         }
-                    }
-                }
-            )
+                )
+            }
+        } else {
+            item {
+                AsyncImage(
+                    model = images[0],
+                    contentDescription = null,
+                    placeholder = ColorPainter(MaterialTheme.colorScheme.surface),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .widthIn(max = 320.dp)
+                        .heightIn(min = 200.dp, max = 340.dp)
+                        .clip(shape)
+                        .border(
+                            width = 0.7.dp,
+                            color = borderColor,
+                            shape = shape
+                        )
+                        .pointerInput(Unit) {
+                            detectTapGestures(onDoubleTap = { onDoubleTap() })
+                        },
+                )
+            }
         }
     }
 }
-
 
 @Composable
 private fun PostActions(
@@ -375,31 +410,32 @@ private fun PostActions(
             modifier = Modifier.size(32.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Share,
+                imageVector = Icons.AutoMirrored.Outlined.Send, // Use Icons.AutoMirrored.Outlined.Send for RTL support
                 contentDescription = "Share post",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier
+                    .size(24.dp) // Instagram icons are usually slightly larger than 20dp
             )
         }
     }
 }
 
 private fun sharePost(
-    context: android.content.Context,
+    context: Context,
     postId: String,
     username: String,
     body: String
 ) {
-    val sendIntent = android.content.Intent().apply {
-        action = android.content.Intent.ACTION_SEND
+    val sendIntent = Intent().apply {
+        action = Intent.ACTION_SEND
         val deepLink = "https://youtubex.com/post/$postId"
         val shareText = "Check out this post from $username on YoutubeX:\n\n$body\n\n$deepLink"
 
-        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+        putExtra(Intent.EXTRA_TEXT, shareText)
         type = "text/plain"
     }
 
-    val shareIntent = android.content.Intent.createChooser(sendIntent, "Share post via")
+    val shareIntent = Intent.createChooser(sendIntent, "Share post via")
     context.startActivity(shareIntent)
 }
 
@@ -424,7 +460,7 @@ private fun ActionButton(
                 imageVector = imageVector,
                 contentDescription = null,
                 tint = tint,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
@@ -502,5 +538,26 @@ fun PostsShimmer() {
                     .shimmerEffect()
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PostItemPreview() {
+    YTTheme(darkTheme = true) {
+        PostItem(
+            post = Post(
+                id = "",
+                avatarUrl = "",
+                username = "Mohammad Faisal",
+                timestamp = "1h ago",
+                body = "Hey Developers, welcome to my YoutubeX App.",
+                imageUrls = listOf(""),
+                likeCount = "899",
+                commentCount = "200",
+                isLiked = true
+            ),
+            onAction = {}
+        ) { }
     }
 }

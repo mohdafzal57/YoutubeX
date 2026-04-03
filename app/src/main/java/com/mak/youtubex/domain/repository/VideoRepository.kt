@@ -18,4 +18,6 @@ interface VideoRepository {
     ): Flow<PagingData<UserVideo>>
 
     fun getVideoFeed(query: String? = null): Flow<PagingData<VideoFeed>>
+
+    suspend fun addView(videoId: String, deviceId: String): Result<Unit, NetworkError>
 }

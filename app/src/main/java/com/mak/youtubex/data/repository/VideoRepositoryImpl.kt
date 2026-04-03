@@ -20,6 +20,7 @@ import com.mak.youtubex.domain.repository.VideoRepository
 import com.mak.youtubex.core.data.util.NetworkError
 import com.mak.youtubex.core.data.util.Result
 import com.mak.youtubex.core.data.util.safeCall
+import com.mak.youtubex.data.remote.dto.video.AddViewRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -82,7 +83,15 @@ class VideoRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun addView(
+        videoId: String,
+        deviceId: String
+    ): Result<Unit, NetworkError> {
+        val request = AddViewRequestDto(deviceId)
+        return safeCall { videoApi.addView(videoId, request) }
+    }
+
     companion object {
-        const val NETWORK_PAGE_SIZE = 5
+        const val NETWORK_PAGE_SIZE = 10
     }
 }

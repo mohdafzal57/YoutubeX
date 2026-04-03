@@ -27,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -66,71 +67,77 @@ fun PlayerScreen(
 
     val sheetState = rememberModalBottomSheetState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        // 1. Video Background
-        VideoPlayer(
-            videoUrl = videoUrl,
-            modifier = Modifier.fillMaxSize(),
-            isPlaying = isPlaying,
-            showControls = showControls,
-            currentPosition = currentPosition,
-            totalDuration = totalDuration,
-            onAction = viewModel::onAction
-        )
+    Scaffold(
 
-        // 2. Bottom gradient scrim — text legibility
+    ) { innerPadding ->
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp)
-                .align(Alignment.BottomCenter)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f)) //was 0.65f
-                    )
-                )
-        )
-
-        // 3. Top Bar
-        TransparentTopBar(onBack = onBackClick)
-
-        // 4. Bottom Overlay
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 12.dp, vertical = 16.dp)
-                .padding(bottom = 100.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(Color.Black)
         ) {
-            VideoInfoSection(
-                creatorName = uiState.creatorName,
-                title = uiState.title,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 16.dp)
+            // 1. Video Background
+            VideoPlayer(
+                videoUrl = videoUrl,
+                modifier = Modifier.fillMaxSize(),
+                isPlaying = isPlaying,
+                showControls = showControls,
+                currentPosition = currentPosition,
+                totalDuration = totalDuration,
+                onAction = viewModel::onAction
             )
-            ActionButtonsColumn(
-                uiState = uiState,
-                onEvent = onEvent
-            )
-        }
 
-        // 5. Bottom Sheet
-        if (uiState.isCommentSheetVisible) {
-            CommentBottomSheet(
-                sheetState = sheetState,
-                onDismiss = { onEvent(PlayerEvent.CloseCommentSheet) },
-                onSubmit = { text -> onEvent(PlayerEvent.SubmitComment(text)) }
+            // 2. Bottom gradient scrim — text legibility
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f)) //was 0.65f
+                        )
+                    )
             )
+
+            // 3. Top Bar
+            TransparentTopBar(onBack = onBackClick)
+
+            // 4. Bottom Overlay
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(horizontal = 12.dp, vertical = 16.dp)
+                    .padding(bottom = 100.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                VideoInfoSection(
+                    creatorName = uiState.creatorName,
+                    title = uiState.title,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 16.dp)
+                )
+                ActionButtonsColumn(
+                    uiState = uiState,
+                    onEvent = onEvent
+                )
+            }
+
+            // 5. Bottom Sheet
+            if (uiState.isCommentSheetVisible) {
+                CommentBottomSheet(
+                    sheetState = sheetState,
+                    onDismiss = { onEvent(PlayerEvent.CloseCommentSheet) },
+                    onSubmit = { text -> onEvent(PlayerEvent.SubmitComment(text)) }
+                )
+            }
         }
     }
+
 }
 
 @Composable
