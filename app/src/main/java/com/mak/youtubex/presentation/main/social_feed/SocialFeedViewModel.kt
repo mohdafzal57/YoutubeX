@@ -35,7 +35,6 @@ sealed interface SocialFeedAction {
 }
 
 sealed interface SocialFeedEvent {
-    data class ShowError(val message: String) : SocialFeedEvent
     data class CommentAdded(val postId: String) : SocialFeedEvent
 }
 
@@ -106,7 +105,6 @@ class SocialFeedViewModel @Inject constructor(
             result.onFailure { error ->
                 if (error == NetworkError.EMPTY_HAND) return@onFailure
                 postDao.toggleLike(postId) // rollback
-                _events.emit(SocialFeedEvent.ShowError("Failed to update like"))
             }
         }.also { job ->
             // Clean up map entry when job completes to avoid unbounded growth
@@ -123,9 +121,6 @@ class SocialFeedViewModel @Inject constructor(
                     .onSuccess {
                         postDao.incrementCommentCount(postId)
                         _events.emit(SocialFeedEvent.CommentAdded(postId))
-                    }
-                    .onFailure {
-                        _events.emit(SocialFeedEvent.ShowError("Failed to add comment"))
                     }
             } finally {
                 _isSendingComment.value = false

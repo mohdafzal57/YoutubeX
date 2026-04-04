@@ -115,7 +115,8 @@ fun PostDetailScreen(
                         PostItem(
                             post = state.post,
                             onAction = { /* TODO: Implement actions if needed */ },
-                            onCommentClick = { /* TODO: Implement comments */ }
+                            onCommentClick = { /* TODO: Implement comments */ },
+                            onNavigateToChannel = { /* TODO: Implement channel navigation */ }
                         )
                     }
                 }

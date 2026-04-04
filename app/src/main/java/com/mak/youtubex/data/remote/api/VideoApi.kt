@@ -25,7 +25,7 @@ interface VideoApi {
         @Query("query") query: String,
         @Query("sortBy") sortBy: String,
         @Query("sortType") sortType: String,
-        @Query("userId") userId: String,
+        @Query("username") username: String,
     ): Response<ApiResponse<PaginatedResponseDto<UserVideoDto>>>
 
     @Multipart

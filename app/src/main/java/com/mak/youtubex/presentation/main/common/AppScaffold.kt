@@ -1,9 +1,12 @@
 package com.mak.youtubex.presentation.main.common
 
+import android.R.attr.contentDescription
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,10 +37,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.mak.youtubex.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,114 +101,200 @@ fun AppScaffold(
         content = content
     )
 }
+
 // shared/components/ErrorScreen.kt
 @Composable
 fun ErrorScreen(
-    message: String = "An unexpected error occurred",
-    onRetry: () -> Unit
+    message: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String = stringResource(R.string.error_title),
+    icon: Painter? = null,
+    retryText: String = stringResource(R.string.retry),
+    isRetrying: Boolean = false
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    CenteredContent(
+        modifier = modifier
     ) {
-        // Subtle background circle for the icon
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.WifiOff, // More specific for network apps
-                contentDescription = null,
-                modifier = Modifier.size(56.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
+
+        // Icon
+        if (icon != null) {
+            Box(
+                modifier = Modifier
+                    .size(Dimens.iconContainer)
+                    .clip(CircleShape)
+                    .background(
+                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = icon,
+                    contentDescription = stringResource(R.string.error_icon_desc),
+                    modifier = Modifier.size(56.dp)
+                )
+            }
+
+            Spacer(Modifier.height(Dimens.spaceXl))
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
+        // Title
         Text(
-            text = "Oops! Something went wrong",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center
+            text = title,
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold
+            ),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(0.85f)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(Dimens.spaceSm))
 
+        // Message
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(0.85f)
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(Modifier.height(Dimens.spaceXl))
 
-        // YouTube-style outlined retry button or filled BrandPrimary button
-        Button(
+        // Retry Button
+        PrimaryButton(
+            text = retryText,
             onClick = onRetry,
-            shape = RoundedCornerShape(24.dp), // Modern rounded look
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            ),
-            modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .height(48.dp)
-        ) {
-            Text(
-                text = "Retry",
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        }
+            isLoading = isRetrying,
+            modifier = Modifier.fillMaxWidth(0.6f)
+        )
     }
 }
 
 // shared/components/EmptyState.kt
 @Composable
 fun EmptyState(
-    icon: ImageVector,
     title: String,
     message: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    painter: Painter? = null,
     actionText: String? = null,
-    onAction: () -> Unit = {}
+    onAction: (() -> Unit)? = null
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    CenteredContent(
+        modifier = modifier
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+        // Icon
+        when {
+            icon != null -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(Dimens.iconLg),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                )
+            }
+
+            painter != null -> {
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier.size(Dimens.iconLg)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(Dimens.spaceMd))
+
+        // Title
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
+            textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
+
+        Spacer(Modifier.height(Dimens.spaceSm))
+
+        // Message
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(0.85f)
         )
-        if (actionText != null) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onAction) {
-                Text(actionText)
-            }
+
+        // Optional Action
+        if (actionText != null && onAction != null) {
+            Spacer(Modifier.height(Dimens.spaceLg))
+
+            PrimaryButton(
+                text = actionText,
+                onClick = onAction,
+                modifier = Modifier.fillMaxWidth(0.6f)
+            )
         }
     }
+}
+
+// design/Dimens.kt
+object Dimens {
+    val spaceXs = 4.dp
+    val spaceSm = 8.dp
+    val spaceMd = 16.dp
+    val spaceLg = 24.dp
+    val spaceXl = 32.dp
+
+    val iconLg = 80.dp
+    val iconContainer = 120.dp
+
+    val buttonHeight = 48.dp
+}
+
+// shared/components/PrimaryButton.kt
+@Composable
+fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isLoading: Boolean = false
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled && !isLoading,
+        shape = RoundedCornerShape(24.dp),
+        modifier = modifier.height(Dimens.buttonHeight)
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                modifier = Modifier.size(18.dp)
+            )
+        } else {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        }
+    }
+}
+
+// shared/components/CenteredContent.kt
+@Composable
+fun CenteredContent(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(Dimens.spaceXl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        content = content
+    )
 }

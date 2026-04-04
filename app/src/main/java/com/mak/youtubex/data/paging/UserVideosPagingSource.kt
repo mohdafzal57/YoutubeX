@@ -24,10 +24,10 @@ class UserVideosPagingSource @Inject constructor(
             val response = videoApi.getAllVideosOfAUser(
                 page = page,
                 limit = NETWORK_PAGE_SIZE,
-                query = userVideoRequest.query,
+                query = "",
                 sortBy = userVideoRequest.sortBy,
                 sortType = userVideoRequest.sortType,
-                userId = userVideoRequest.userId
+                username = userVideoRequest.username
             )
 
             if (!response.isSuccessful) {

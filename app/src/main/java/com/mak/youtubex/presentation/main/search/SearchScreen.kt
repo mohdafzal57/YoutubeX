@@ -66,7 +66,7 @@ fun SearchScreen(
     onVideoClick: (String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
-    onNavigateToChannel: (String, String) -> Unit
+    onNavigateToChannel: (String) -> Unit
 ) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val searchResultUiState by viewModel.searchResultUiState.collectAsStateWithLifecycle()
@@ -93,7 +93,7 @@ internal fun SearchScreen(
     onBackClick: () -> Unit,
     onVideoClick: (String, String) -> Unit,
     modifier: Modifier = Modifier,
-    onNavigateToChannel: (String, String) -> Unit
+    onNavigateToChannel: (String) -> Unit
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -151,7 +151,7 @@ internal fun SearchScreen(
 private fun SearchResultBody(
     videos: LazyPagingItems<VideoFeed>,
     onVideoClick: (String, String) -> Unit,
-    onNavigateToChannel: (String, String) -> Unit
+    onNavigateToChannel: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -167,7 +167,7 @@ private fun SearchResultBody(
                 VideoItem(
                     video = video,
                     onClick = { onVideoClick(video.videoFile, video.id) },
-                    onNavigateToChannel = { onNavigateToChannel(video.username, video.ownerId) }
+                    onNavigateToChannel = { onNavigateToChannel(video.username) }
                 )
             }
         }

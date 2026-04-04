@@ -19,8 +19,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,9 +50,9 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
+import com.mak.youtubex.domain.model.Post
 import com.mak.youtubex.domain.model.UserChannel
 import com.mak.youtubex.domain.model.UserVideo
-import com.mak.youtubex.domain.model.Video
 import com.mak.youtubex.presentation.main.common.AppScaffold
 import com.mak.youtubex.presentation.main.common.BottomLoader
 import com.mak.youtubex.presentation.main.common.FullScreenLoader
@@ -54,15 +60,18 @@ import com.mak.youtubex.presentation.main.common.RetryFooter
 import com.mak.youtubex.presentation.main.common.ShareVideoButton
 import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 import com.mak.youtubex.presentation.main.subscription.NotificationSettingsSheet
+import com.mak.youtubex.presentation.main.social_feed.PostItem
 
 @Composable
 fun ChannelScreen(
     onNavigateBack: () -> Unit,
     onPlayVideo: (String, String) -> Unit,
+    onNavigateToPost: (String) -> Unit = {}, // Added for potential navigation from posts
     viewModel: ChannelViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val videos = viewModel.videos.collectAsLazyPagingItems()
+    val posts = viewModel.userPosts.collectAsLazyPagingItems()
     val snackbarHostState = LocalSnackbarHostState.current
 
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -89,6 +98,7 @@ fun ChannelScreen(
             ChannelContent(
                 uiState = uiState,
                 videos = videos,
+                posts = posts,
                 padding = padding,
                 onIntent = viewModel::onIntent,
                 onPlayVideo = onPlayVideo,
@@ -118,6 +128,7 @@ fun ChannelScreen(
 private fun ChannelContent(
     uiState: ChannelProfileState,
     videos: LazyPagingItems<UserVideo>,
+    posts: LazyPagingItems<Post>,
     padding: PaddingValues,
     onIntent: (ChannelIntent) -> Unit,
     onPlayVideo: (String, String) -> Unit,
@@ -175,51 +186,84 @@ private fun ChannelContent(
                     }
                 }
 
-                // 🔹 Filters
+                // 🔹 Tabs
                 item {
-                    FilterChipsRow(
-                        selectedSort = uiState.sortType,
-                        onAction = onIntent
+                    ChannelTabs(
+                        selectedTab = uiState.contentType,
+                        onTabSelected = { onIntent(ChannelIntent.Content(it)) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // 🔹 Video List
-                items(
-                    count = videos.itemCount,
-                    key = videos.itemKey { it.id }
-                ) { index ->
-                    videos[index]?.let { video ->
-                        VideoCard(
-                            video = video,
-                            onClick = {
-                                onPlayVideo(video.videoFile, video.id)
-                            }
+                if (uiState.contentType == ContentType.VIDEOS) {
+                    // 🔹 Video Filters
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        FilterChipsRow(
+                            selectedSort = uiState.sortType,
+                            onAction = onIntent
                         )
-                    }
-                }
-
-                // 🔹 Paging Footer
-                when (videos.loadState.append) {
-                    is LoadState.Loading -> {
-                        item { BottomLoader() }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    is LoadState.Error -> {
-                        item {
-                            RetryFooter(
-                                onRetry = { videos.retry() }
+                    // 🔹 Video List
+                    items(
+                        count = videos.itemCount,
+                        key = videos.itemKey { it.id }
+                    ) { index ->
+                        videos[index]?.let { video ->
+                            VideoCard(
+                                video = video,
+                                onClick = {
+                                    onPlayVideo(video.videoFile, video.id)
+                                }
                             )
                         }
                     }
 
-                    else -> Unit
+                    // 🔹 Video Paging Footer
+                    when (videos.loadState.append) {
+                        is LoadState.Loading -> {
+                            item { BottomLoader() }
+                        }
+                        is LoadState.Error -> {
+                            item { RetryFooter(onRetry = { videos.retry() }) }
+                        }
+                        else -> Unit
+                    }
+                } else {
+                    // 🔹 Posts List
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
+                    
+                    items(
+                        count = posts.itemCount,
+                        key = posts.itemKey { it.id }
+                    ) { index ->
+                        posts[index]?.let { post ->
+                            PostItem(
+                                post = post,
+                                onAction = { /* Handle post actions if needed */ },
+                                onNavigateToChannel = { /* Already on channel */ },
+                                onCommentClick = { /* Handle comments if needed */ }
+                            )
+                        }
+                    }
+
+                    // 🔹 Posts Paging Footer
+                    when (posts.loadState.append) {
+                        is LoadState.Loading -> {
+                            item { BottomLoader() }
+                        }
+                        is LoadState.Error -> {
+                            item { RetryFooter(onRetry = { posts.retry() }) }
+                        }
+                        else -> Unit
+                    }
                 }
             }
         }
 
         else -> {
-            // Fallback state (important)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -229,6 +273,41 @@ private fun ChannelContent(
                 Text(
                     text = "Something went wrong",
                     style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ChannelTabs(
+    selectedTab: ContentType,
+    onTabSelected: (ContentType) -> Unit
+) {
+    val tabs = ContentType.entries.toTypedArray()
+
+    PrimaryScrollableTabRow(
+        selectedTabIndex = selectedTab.ordinal,
+        edgePadding = 16.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
+        divider = {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        },
+    ) {
+        tabs.forEach { tab ->
+            val isSelected = selectedTab == tab
+
+            Tab(
+                selected = isSelected,
+                onClick = { onTabSelected(tab) },
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                Text(
+                    text = tab.name.lowercase().replaceFirstChar { it.uppercase() },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                 )
             }
         }
@@ -247,21 +326,19 @@ fun ChannelHeaderSection(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar with a specific background color for that "circular frame" look
         AsyncImage(
             model = profile.avatar,
             contentDescription = "Profile Picture",
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF0F1B1B)), // Darker tint often seen behind logos
+                .background(Color(0xFF0F1B1B)),
             contentScale = ContentScale.Crop
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            // Channel Name (Bold & Large)
             Text(
                 text = profile.username,
                 style = MaterialTheme.typography.headlineSmall.copy(
@@ -273,7 +350,6 @@ fun ChannelHeaderSection(
                 overflow = TextOverflow.Ellipsis
             )
 
-            // Handle / Username
             Text(
                 text = "@${profile.fullName.lowercase().replace(" ", "")}",
                 style = MaterialTheme.typography.bodyLarge,
@@ -281,7 +357,6 @@ fun ChannelHeaderSection(
                 modifier = Modifier.padding(top = 2.dp)
             )
 
-            // Subscriber and Video count metadata
             Text(
                 text = "${profile.subscribersCount} subscribers • ${profile.videosCount} videos",
                 style = MaterialTheme.typography.bodyMedium,
@@ -334,13 +409,13 @@ fun FilterChipItem(
     onClick: () -> Unit
 ) {
     val containerColor = if (isSelected) {
-        MaterialTheme.colorScheme.onSurface // Black in light mode, White in dark
+        MaterialTheme.colorScheme.onSurface
     } else {
-        MaterialTheme.colorScheme.surfaceVariant // Soft gray
+        MaterialTheme.colorScheme.surfaceVariant
     }
 
     val contentColor = if (isSelected) {
-        MaterialTheme.colorScheme.surface // Text color flips for contrast
+        MaterialTheme.colorScheme.surface
     } else {
         MaterialTheme.colorScheme.onSurface
     }
@@ -349,7 +424,7 @@ fun FilterChipItem(
         onClick = onClick,
         color = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(8.dp), // M3 uses 8.dp for small components
+        shape = RoundedCornerShape(8.dp),
         modifier = Modifier.height(32.dp)
     ) {
         Box(
@@ -373,10 +448,9 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.Top
     ) {
-        // --- 1. Thumbnail with Duration Overlay ---
         Box(
             modifier = Modifier
-                .width(160.dp) // Adjusted to match the aspect ratio in your image
+                .width(160.dp)
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -388,7 +462,6 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Duration Badge (Bottom Right)
             Surface(
                 color = Color.Black.copy(alpha = 0.8f),
                 shape = RoundedCornerShape(4.dp),
@@ -407,7 +480,6 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // --- 2. Video Details ---
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -424,7 +496,6 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Views and Time
             Text(
                 text = "${video.views} views • ${video.createdAt}",
                 style = MaterialTheme.typography.bodySmall,
@@ -432,7 +503,6 @@ fun VideoCard(video: UserVideo, onClick: () -> Unit) {
             )
         }
 
-        // --- 3. More Options Menu ---
         ShareVideoButton(video.videoFile)
     }
 }

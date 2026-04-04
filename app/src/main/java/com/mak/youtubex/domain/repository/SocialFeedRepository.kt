@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 interface SocialRepository {
 
     fun getSocialFeed(): Flow<PagingData<Post>>
-    fun getUserPosts(): Flow<PagingData<Post>>
+    fun getUserPosts(username: String): Flow<PagingData<Post>>
 
     suspend fun getPostById(postId: String): Result<Post, NetworkError>
 

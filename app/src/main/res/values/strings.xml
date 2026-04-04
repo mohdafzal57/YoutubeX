@@ -48,4 +48,28 @@
     <string name="not_connected">⚠️ You aren’t connected to the internet</string>
     <string name="title_activity_upload">UploadActivity</string>
 
+    <!-- Error Screen -->
+    <string name="error_title">Something went wrong</string>
+    <string name="error_icon_desc">Error icon</string>
+    <string name="retry">Retry</string>
+
+    <!-- Generic Messages -->
+    <string name="generic_error_message">An unexpected error occurred. Please try again.</string>
+    <string name="network_error_message">No internet connection. Check your network and try again.</string>
+    <string name="server_error_message">Server is unavailable. Please try later.</string>
+
+    <!-- Empty State -->
+    <string name="empty_title">Nothing here</string>
+    <string name="empty_message">There is no data available right now.</string>
+
+    <!-- Optional Actions -->
+    <string name="try_again">Try again</string>
+    <string name="refresh">Refresh</string>
+    <string name="go_back">Go back</string>
+    <string name="error_load_videos">Failed to load videos</string>
+    <string name="no_videos_found">No videos found.</string>
+    <string name="no_posts_found">No videos found.</string>
+    <string name="empty_videos_title">Nothing to watch yet</string>
+    <string name="empty_posts_title">Nothing to watch yet</string>
+
 </resources>

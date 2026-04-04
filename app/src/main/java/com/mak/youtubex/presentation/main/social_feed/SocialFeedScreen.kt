@@ -3,6 +3,7 @@ package com.mak.youtubex.presentation.main.social_feed
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -29,10 +30,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.HideImage
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -41,14 +42,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,14 +54,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -77,40 +74,25 @@ import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.mak.youtubex.R
 import com.mak.youtubex.domain.model.Post
+import com.mak.youtubex.presentation.main.common.EmptyState
 import com.mak.youtubex.presentation.main.common.YTPullToRefreshBox
 import com.mak.youtubex.presentation.main.common.YTTopAppBar
-import com.mak.youtubex.presentation.main.home.EmptyStateScreen
 import com.mak.youtubex.presentation.main.home.shimmerEffect
-import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 import com.mak.youtubex.presentation.ui.theme.ColorLike
 import com.mak.youtubex.presentation.ui.theme.YTTheme
-import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialFeedScreen(
+    onNavigationToSearch: () -> Unit,
+    onNavigateToChannel: (username: String) -> Unit,
     viewModel: SocialFeedViewModel = hiltViewModel()
 ) {
     val posts = viewModel.posts.collectAsLazyPagingItems()
-    val snackbarHostState = LocalSnackbarHostState.current
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showCommentsForPost by remember { mutableStateOf<Post?>(null) }
-
-    LaunchedEffect(Unit) {
-        viewModel.events.collectLatest { event ->
-            when (event) {
-                is SocialFeedEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(message = event.message)
-                }
-
-                is SocialFeedEvent.CommentAdded -> {
-
-                }
-            }
-        }
-    }
 
     // True ONLY when user triggered a pull-to-refresh on an already-populated list.
     val isUserRefreshing = posts.loadState.refresh is LoadState.Loading
@@ -118,11 +100,10 @@ fun SocialFeedScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             YTTopAppBar(
                 scrollBehavior = scrollBehavior,
-                onNavigateToSearch = { }
+                onNavigateToSearch = onNavigationToSearch
             )
         },
     ) { innerPadding ->
@@ -168,7 +149,8 @@ fun SocialFeedScreen(
                                 onAction = viewModel::onAction,
                                 onCommentClick = {
                                     showCommentsForPost = post
-                                }
+                                },
+                                onNavigateToChannel = { onNavigateToChannel(post.username) }
                             )
                         }
                     }
@@ -193,9 +175,13 @@ fun SocialFeedScreen(
             }
 
             if (posts.loadState.refresh is LoadState.Error && posts.itemCount == 0) {
-                EmptyStateScreen(
-                    message = "Failed to load posts",
-                    onRetry = { posts.refresh() }
+                EmptyState(
+                    title = stringResource(R.string.empty_posts_title),
+                    message = stringResource(R.string.no_posts_found),
+                    icon = Icons.Default.HideImage,
+                    actionText = stringResource(R.string.refresh),
+                    onAction = { posts.refresh() },
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
@@ -206,6 +192,7 @@ fun SocialFeedScreen(
 fun PostItem(
     post: Post,
     onAction: (SocialFeedAction) -> Unit,
+    onNavigateToChannel: () -> Unit,
     onCommentClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -229,7 +216,8 @@ fun PostItem(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .clickable(onClick = onNavigateToChannel),
                 placeholder = ColorPainter(MaterialTheme.colorScheme.surface)
             )
 
@@ -557,7 +545,9 @@ private fun PostItemPreview() {
                 commentCount = "200",
                 isLiked = true
             ),
-            onAction = {}
-        ) { }
+            onAction = {},
+            onNavigateToChannel = {},
+            onCommentClick = {}
+        )
     }
 }

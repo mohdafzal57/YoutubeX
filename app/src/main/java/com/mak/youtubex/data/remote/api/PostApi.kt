@@ -32,9 +32,9 @@ interface PostApi {
         @Path("postId") postId: String
     ): Response<ApiResponse<PostDto>>
 
-    @GET("posts/user/{userId}")
+    @GET("posts/user/{username}")
     suspend fun getUserPosts(
-        @Path("userId") userId: String,
+        @Path("username") username: String,
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 10
     ): Response<ApiResponse<PaginatedResponseDto<PostDto>>>

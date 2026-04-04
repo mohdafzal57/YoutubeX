@@ -18,8 +18,8 @@ sealed class Screen(val route: String) {
     // Features
     data object Search : Screen("search")
 
-    data object ChannelDetail : Screen("channel/{$ARG_USERNAME}/{$ARG_OWNER_ID}") {
-        fun createRoute(username: String, ownerId: String) = "channel/$username/$ownerId"
+    data object ChannelDetail : Screen("channel/{$ARG_USERNAME}") {
+        fun createRoute(username: String) = "channel/$username"
     }
 
     data object Player : Screen("player/{$ARG_VIDEO_ID}/{$ARG_ENCODED_URL}") {

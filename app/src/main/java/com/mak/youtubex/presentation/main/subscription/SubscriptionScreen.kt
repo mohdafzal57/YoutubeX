@@ -57,7 +57,7 @@ import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 @Composable
 fun SubscriptionScreen(
     viewModel: SubscriptionViewModel = hiltViewModel(),
-    onNavigateToChannel: (String, String) -> Unit
+    onNavigateToChannel: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -131,7 +131,7 @@ fun SubscriptionScreen(
                                 ) { item ->
                                     SubscriptionItemRow(
                                         item = item,
-                                        onItemClick = { onNavigateToChannel(item.name, item.id) },
+                                        onItemClick = { onNavigateToChannel(item.name) },
                                         onNotificationClick = {
                                             selectedItem = item
                                             showBottomSheet = true

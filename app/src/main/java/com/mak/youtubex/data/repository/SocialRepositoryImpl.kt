@@ -16,6 +16,7 @@ import com.mak.youtubex.data.local.YTDatabase
 import com.mak.youtubex.data.paging.CommentPagingSource
 import com.mak.youtubex.data.paging.PostFeedPagingSource
 import com.mak.youtubex.data.paging.PostRemoteMediator
+import com.mak.youtubex.data.paging.UserPostsPagingSource
 import com.mak.youtubex.data.remote.api.PostApi
 import com.mak.youtubex.data.remote.dto.comment.CommentRequest
 import com.mak.youtubex.data.remote.mapper.toCompressedMultipart
@@ -84,7 +85,7 @@ class SocialRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun getUserPosts(): Flow<PagingData<Post>> {
+    override fun getUserPosts(username: String): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(
                 pageSize = 10,
@@ -92,7 +93,10 @@ class SocialRepositoryImpl @Inject constructor(
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
-                PostFeedPagingSource(postApi)
+                UserPostsPagingSource(
+                    postApi = postApi,
+                    username = username
+                )
             }
         ).flow.map { pagingData ->
             pagingData.map { it.toDomain() }

@@ -35,9 +35,9 @@ fun NavGraphBuilder.mainNavGraph(
                 onPlayVideo = { videoUrl, videoId ->
                     navController.navigate(Screen.Player.createRoute(videoUrl, videoId))
                 },
-                onNavigateToChannel = { username, ownerId ->
+                onNavigateToChannel = { username ->
                     // BEST PRACTICE: Use createRoute instead of manual string concatenation
-                    navController.navigate(Screen.ChannelDetail.createRoute(username, ownerId))
+                    navController.navigate(Screen.ChannelDetail.createRoute(username))
                 },
                 onNavigateToSearch = {
                     navController.navigate(Screen.Search.route)
@@ -46,7 +46,14 @@ fun NavGraphBuilder.mainNavGraph(
         }
 
         composable(Screen.SocialFeed.route) {
-            SocialFeedScreen()
+            SocialFeedScreen(
+                onNavigationToSearch = {
+                    navController.navigate(Screen.Search.route)
+                },
+                onNavigateToChannel = { username ->
+                    navController.navigate(Screen.ChannelDetail.createRoute(username))
+                }
+            )
         }
 
         composable(Screen.Search.route) {
@@ -55,16 +62,16 @@ fun NavGraphBuilder.mainNavGraph(
                 onVideoClick = { videoUrl, videoId ->
                     navController.navigate(Screen.Player.createRoute(videoUrl, videoId))
                 },
-                onNavigateToChannel = { username, ownerId ->
-                    navController.navigate(Screen.ChannelDetail.createRoute(username, ownerId))
+                onNavigateToChannel = { username ->
+                    navController.navigate(Screen.ChannelDetail.createRoute(username))
                 }
             )
         }
 
         composable(Screen.Subscription.route) {
             SubscriptionScreen(
-                onNavigateToChannel = { username, ownerId ->
-                    navController.navigate(Screen.ChannelDetail.createRoute(username, ownerId))
+                onNavigateToChannel = { username ->
+                    navController.navigate(Screen.ChannelDetail.createRoute(username))
                 }
             )
         }
@@ -72,8 +79,7 @@ fun NavGraphBuilder.mainNavGraph(
         composable(
             route = Screen.ChannelDetail.route, // BEST PRACTICE: Route logic is now inside Screen.kt
             arguments = listOf(
-                navArgument(Screen.ARG_USERNAME) { type = NavType.StringType },
-                navArgument(Screen.ARG_OWNER_ID) { type = NavType.StringType }
+                navArgument(Screen.ARG_USERNAME) { type = NavType.StringType }
             )
         ) {
             ChannelScreen(

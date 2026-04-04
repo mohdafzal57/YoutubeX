@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 class UserPostsPagingSource @Inject constructor(
     private val postApi: PostApi,
-    private val userId: String
+    private val username: String
 ) : PagingSource<Int, PostDto>() {
 
     companion object {
@@ -24,7 +24,7 @@ class UserPostsPagingSource @Inject constructor(
 
         return try {
             val response = postApi.getUserPosts(
-                userId = userId,
+                username = username,
                 page = page,
                 limit = NETWORK_PAGE_SIZE
             )

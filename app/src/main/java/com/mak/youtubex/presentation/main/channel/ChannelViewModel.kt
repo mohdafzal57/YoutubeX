@@ -14,6 +14,8 @@ import com.mak.youtubex.domain.repository.VideoRepository
 import com.mak.youtubex.core.data.util.NetworkError
 import com.mak.youtubex.core.data.util.onFailure
 import com.mak.youtubex.core.data.util.onSuccess
+import com.mak.youtubex.domain.model.Post
+import com.mak.youtubex.domain.repository.SocialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,13 +25,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ChannelViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
+    private val postRepository: SocialRepository,
     private val videoRepository: VideoRepository,
     private val userRepository: UserRepository,
     private val savedStateHandle: SavedStateHandle
@@ -37,50 +42,54 @@ class ChannelViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ChannelProfileState())
     val uiState: StateFlow<ChannelProfileState> = _uiState.asStateFlow()
+    private val sortType = MutableStateFlow(SortType.LATEST)
+    
+    // Trigger to start collecting posts only when the tab is selected
+    private val isPostsTabSelected = MutableStateFlow(false)
+
     private val _events = Channel<ChannelEvent>()
     val events = _events.receiveAsFlow()
 
     private val username: String = savedStateHandle["username"] ?: ""
-    private val ownerId: String = savedStateHandle["ownerId"] ?: ""
-
-    // 1. Keep track of params in a StateFlow
-    private val _videoParams = MutableStateFlow(
-        UserVideoState(
-            ownerId = ownerId,
-            sortBy = "createdAt",
-            sortType = SortType.LATEST.value // "desc"
-        )
-    )
-
-
-    // 2. Use flatMapLatest to react to param changes
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val videos: Flow<PagingData<UserVideo>> = _videoParams
-        .flatMapLatest { params ->
-            videoRepository.getUserVideos(
-                UserVideoRequest(
-                    userId = params.ownerId,
-                    query = params.query,
-                    sortBy = params.sortBy,
-                    sortType = params.sortType // Ensure your request DTO supports this
-                )
-            )
-        }
-        .cachedIn(viewModelScope)
 
     init {
         loadChannelProfile()
     }
 
+    val videos: Flow<PagingData<UserVideo>> =
+        sortType.flatMapLatest { type ->
+            videoRepository.getUserVideos(
+                UserVideoRequest(
+                    username = username,
+                    sortBy = "createdAt",
+                    sortType = type.value
+                )
+            )
+        }.cachedIn(viewModelScope)
+
+    val userPosts: Flow<PagingData<Post>> =
+        isPostsTabSelected.flatMapLatest { selected ->
+            if (selected) {
+                postRepository.getUserPosts(username)
+            } else {
+                flowOf(PagingData.empty())
+            }
+        }.cachedIn(viewModelScope)
+
     fun onIntent(intent: ChannelIntent) {
         when (intent) {
             ChannelIntent.ToggleSubscription -> toggleSubscription()
 
+            is ChannelIntent.Content -> {
+                _uiState.update { it.copy(contentType = intent.contentType) }
+                if (intent.contentType == ContentType.POSTS) {
+                    isPostsTabSelected.value = true
+                }
+            }
+
             is ChannelIntent.OrderType -> {
-                // Update UI state (for the UI checkmarks)
                 _uiState.update { it.copy(sortType = intent.sortType) }
-                // Update params (this triggers flatMapLatest and refreshes the list)
-                _videoParams.update { it.copy(sortType = intent.sortType.value) }
+                sortType.update { intent.sortType }
             }
         }
     }
@@ -107,9 +116,8 @@ class ChannelViewModel @Inject constructor(
 
     fun toggleSubscription() {
         val currentState = _uiState.value
-        if (currentState.profile == null) {
-            return
-        }
+        if (currentState.profile == null) return
+        
         _uiState.update { it.copy(isSubscribed = !currentState.isSubscribed) }
         viewModelScope.launch {
             subscriptionRepository.toggleSubscription(currentState.profile.id)
@@ -127,26 +135,26 @@ data class ChannelProfileState(
     val profile: UserChannel? = null,
     val isSubscribed: Boolean = false,
     val sortType: SortType = SortType.LATEST,
+    val contentType: ContentType = ContentType.VIDEOS,
     val error: String? = null
 )
 
 sealed interface ChannelIntent {
     data object ToggleSubscription : ChannelIntent
     data class OrderType(val sortType: SortType) : ChannelIntent
+    data class Content(val contentType: ContentType) : ChannelIntent
 }
 
 sealed interface ChannelEvent {
     data class ShowError(val message: String) : ChannelEvent
 }
 
-data class UserVideoState(
-    val ownerId: String = "",
-    val query: String = "",
-    val sortBy: String = "createdAt",
-    val sortType: String = "desc"
-)
-
 enum class SortType(val value: String) {
     LATEST("desc"),
     OLDEST("asc")
+}
+
+enum class ContentType {
+    VIDEOS,
+    POSTS
 }

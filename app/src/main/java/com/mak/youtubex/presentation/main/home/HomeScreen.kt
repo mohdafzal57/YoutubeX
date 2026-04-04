@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,13 +40,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.mak.youtubex.R
 import com.mak.youtubex.presentation.main.common.BottomLoader
+import com.mak.youtubex.presentation.main.common.EmptyState
 import com.mak.youtubex.presentation.main.common.ErrorScreen
 import com.mak.youtubex.presentation.main.common.RetryFooter
 import com.mak.youtubex.presentation.main.common.VideoItem
@@ -56,7 +61,7 @@ import com.mak.youtubex.presentation.main.common.YTTopAppBar
 @Composable
 fun HomeScreen(
     onPlayVideo: (String, String) -> Unit,
-    onNavigateToChannel: (String, String) -> Unit,
+    onNavigateToChannel: (String) -> Unit,
     onNavigateToSearch: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -111,7 +116,7 @@ fun HomeScreen(
                         VideoItem(
                             video = video,
                             onClick = { onPlayVideo(video.videoFile, video.id) },
-                            onNavigateToChannel = { onNavigateToChannel(video.username, video.ownerId) }
+                            onNavigateToChannel = { onNavigateToChannel(video.username) }
                         )
                     }
                 }
@@ -130,69 +135,22 @@ fun HomeScreen(
             // Initial Load / Empty State Error handling
             if (videos.loadState.refresh is LoadState.Error && videos.itemCount == 0) {
                 ErrorScreen(
-                    message = "Failed to load videos",
-                    onRetry = { videos.retry() }
+                    message = stringResource(R.string.error_load_videos),
+                    onRetry = { videos.retry() },
+                    isRetrying = videos.loadState.refresh is LoadState.Loading,
+                    icon = painterResource(R.drawable.offline_dino_car)
                 )
             }
 
             else if (videos.loadState.refresh is LoadState.NotLoading && videos.itemCount == 0) {
-                EmptyStateScreen(
-                    message = "No videos found.",
-                    onRetry = { videos.refresh() } // Let them try again!
+                EmptyState(
+                    title = stringResource(R.string.empty_videos_title),
+                    message = stringResource(R.string.no_videos_found),
+                    icon = Icons.Default.VideoLibrary,
+                    actionText = stringResource(R.string.refresh),
+                    onAction = { videos.refresh() },
+                    modifier = Modifier.fillMaxSize()
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun EmptyStateScreen(
-    modifier: Modifier = Modifier,
-    message: String,
-    onRetry: (() -> Unit)? = null, // Optional retry button
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // You can replace this with a relevant Painter/Icon
-        Icon(
-            imageVector = Icons.Default.CloudOff,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Try searching for something else or check back later.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-
-        if (onRetry != null) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text(text = "Refresh")
             }
         }
     }

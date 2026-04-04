@@ -18,8 +18,7 @@ data class UserVideo(
 )
 
 data class UserVideoRequest(
-    val userId: String,
-    val query: String = "",
+    val username: String,
     val sortBy: String = "createdAt",
     val sortType: String = "desc",
 )
