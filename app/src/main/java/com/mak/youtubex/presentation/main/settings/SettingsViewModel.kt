@@ -64,6 +64,9 @@ class SettingsViewModel @Inject constructor(
                     showChangePasswordDialog = false
                 )
             }
+
+            is SettingsAction.ShowLogoutDialog -> _state.update { it.copy(showLogoutDialog = true) }
+            is SettingsAction.DismissLogoutDialog -> _state.update { it.copy(showLogoutDialog = false) }
         }
     }
 
@@ -177,7 +180,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun logout() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, showLogoutDialog = false) }
             userRepository.signOut()
             _state.update { it.copy(isLoading = false) }
         }
@@ -194,7 +197,8 @@ data class SettingsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val showEditDialog: Boolean = false,
-    val showChangePasswordDialog: Boolean = false
+    val showChangePasswordDialog: Boolean = false,
+    val showLogoutDialog: Boolean = false
 )
 
 sealed interface SettingsAction {
@@ -208,6 +212,8 @@ sealed interface SettingsAction {
     data object DismissEditSettingsDialog : SettingsAction
     data object ShowChangePasswordDialog : SettingsAction
     data object DismissChangePasswordDialog : SettingsAction
+    data object ShowLogoutDialog : SettingsAction
+    data object DismissLogoutDialog : SettingsAction
 }
 
 sealed interface SettingsEvent {

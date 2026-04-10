@@ -113,7 +113,7 @@ fun SettingsScreen(
                         onCoverImageClick = { coverImageLauncher.launch("image/*") },
                         onEditProfile = { viewModel.onAction(SettingsAction.ShowEditSettingsDialog) },
                         onChangePassword = { viewModel.onAction(SettingsAction.ShowChangePasswordDialog) },
-                        onLogout = { viewModel.onAction(SettingsAction.Logout) }
+                        onLogout = { viewModel.onAction(SettingsAction.ShowLogoutDialog) }
                     )
                 }
             }
@@ -136,6 +136,17 @@ fun SettingsScreen(
                         viewModel.onAction(SettingsAction.ChangePassword(oldPassword, newPassword))
                     }
                 )
+            }
+
+            if (state.showLogoutDialog) {
+                LogoutConfirmationDialog(
+                    onDismiss = { viewModel.onAction(SettingsAction.DismissLogoutDialog) },
+                    onConfirm = { viewModel.onAction(SettingsAction.Logout) }
+                )
+            }
+
+            if (state.isLoading && state.userProfile != null) {
+                FullScreenLoader()
             }
         }
     }

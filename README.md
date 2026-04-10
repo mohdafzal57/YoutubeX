@@ -1,50 +1,90 @@
-# YoutubeX - A Modern YouTube Clone
+# YouTube Clone Android App (YoutubeX - Jetpack Compose, Clean Architecture)
 
-YoutubeX is a feature-rich, open-source YouTube clone built with modern Android development tools and best practices. It demonstrates the use of Jetpack Compose, Clean Architecture, and advanced networking/caching strategies.
+YoutubeX is a modern **YouTube clone Android app** built using Jetpack Compose, Clean Architecture, and REST APIs.  
+It demonstrates how to build a scalable **video streaming app clone** with features like authentication, video upload, subscriptions, and offline caching.
+
+---
+
+## 🔍 Keywords
+youtube clone android, youtube clone jetpack compose, video streaming app android, youtube clone github, android video app project, kotlin youtube clone
+
+---
 
 ## 🚀 Features
 
-- **Video Feed**: Browse and watch videos with a seamless player experience.
-- **Social Feed**: A community-driven feed supporting posts with text and images, likes, and comments.
-- **Subscriptions**: Manage channel subscriptions with real-time updates.
-- **Channel Profiles**: View detailed channel information, subscriber counts, and uploaded content.
-- **Search**: Robust search functionality for finding videos and channels.
-- **Authentication**: Secure Sign-in and Sign-up flow with JWT-based session management.
-- **Dark Mode Support**: Fully integrated Material 3 theme with dark and light mode support.
-- **Offline Caching**: Room-based caching for social posts to ensure a smooth offline experience.
-- **Video Upload**: Support for capturing and uploading videos directly from the app.
+- 🎬 Video Feed: Browse and watch videos with smooth playback experience
+- 📱 Social Feed: Community posts with images, likes, and comments
+- 🔔 Subscriptions: Real-time subscription updates
+- 👤 Channel Profiles: View channel data, subscribers, and uploads
+- 🔎 Search: Find videos and channels instantly
+- 🔐 Authentication: JWT-based login & signup system
+- 🌙 Dark Mode: Material 3 light/dark theme support
+- 💾 Offline Caching: Room database for offline posts
+- ⬆️ Video Upload: Upload videos directly from the app
+
+---
 
 ## 🛠 Tech Stack
 
-- **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) for a declarative UI.
-- **Architecture**: Clean Architecture (Domain, Data, Presentation layers).
-- **Dependency Injection**: [Hilt](https://dagger.dev/hilt/) for robust DI.
-- **Networking**: [Retrofit](https://square.github.io/retrofit/) & [OkHttp](https://square.github.io/okhttp/) for REST API communication.
-- **Database**: [Room](https://developer.android.com/training/data-storage/room) for local persistence and offline support.
-- **Pagination**: [Paging 3](https://developer.android.com/topic/libraries/architecture/paging/v3) for efficient list loading and RemoteMediator.
-- **Image Loading**: [Coil](https://coil-kt.github.io/coil/) for optimized image and video thumbnail rendering.
-- **Navigation**: [Jetpack Navigation Compose](https://developer.android.com/jetpack/compose/navigation).
-- **Session Management**: [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) for secure token storage.
+- **Language**: Kotlin
+- **UI**: Jetpack Compose
+- **Architecture**: Clean Architecture (MVVM)
+- **Dependency Injection**: Hilt
+- **Networking**: Retrofit + OkHttp
+- **Database**: Room (offline caching)
+- **Pagination**: Paging 3 + RemoteMediator
+- **Image Loading**: Coil
+- **Navigation**: Navigation Compose
+- **Session Management**: DataStore
+
+---
 
 ## 🏗 Architecture
 
-The project follows the **Clean Architecture** pattern to ensure scalability and testability:
+This project follows **Clean Architecture** for scalability and maintainability:
 
-1.  **Presentation Layer**: Contains Composable screens and ViewModels. Uses `StateFlow` and `SharedFlow` for reactive UI updates.
-2.  **Domain Layer**: Contains business logic, entities, and repository interfaces. This layer is platform-independent.
-3.  **Data Layer**: Contains repository implementations, API definitions, DTOs (Data Transfer Objects), and Room database logic.
+1. **Presentation Layer**
+    - Jetpack Compose UI
+    - ViewModels using StateFlow & SharedFlow
+
+2. **Domain Layer**
+    - Business logic
+    - Use cases and repository interfaces
+
+3. **Data Layer**
+    - API services (Retrofit)
+    - DTOs and repository implementations
+    - Room database
+
+---
+
+## 🌐 Live Demo
+
+- 🎥 Watch Demo: https://res.cloudinary.com/dxbwode3q/video/upload/v1775850956/screen-20260411-012459_i2whag.mp4
+- 📱 Download APK: https://github.com/mohdafzal57/YoutubeX/releases/download/v1.0.0/app-release.apk
+
+---
+
+## 📌 About This Project
+
+This project is built to demonstrate modern Android development practices using Kotlin and Jetpack Compose.  
+It replicates core features of YouTube such as video streaming, authentication, and social interaction while following scalable architecture patterns.
+
+---
 
 ## 🚦 Getting Started
 
 ### Prerequisites
-- Android Studio Ladybug | 2024.2.1 or newer.
-- JDK 17.
-- Android SDK 35 (API level 35).
+
+- Android Studio Ladybug | 2024.2.1 or newer
+- JDK 17
+- Android SDK 35 (API level 35)
 
 ### Installation
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/yourusername/youtubex.git
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/youtubex.git
     ```
 2.  Open the project in Android Studio.
 3.  Add your `BASE_URL` to `gradle.properties` or `BuildConfig`.
@@ -52,9 +92,16 @@ The project follows the **Clean Architecture** pattern to ensure scalability and
 
 ## 📸 Screenshots
 
-| Home Feed | Video Player | Social Feed |
-| :---: | :---: | :---: |
-| ![Home](https://via.placeholder.com/200x400?text=Home+Feed) | ![Player](https://via.placeholder.com/200x400?text=Video+Player) | ![Social](https://via.placeholder.com/200x400?text=Social+Feed) |
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_1_kaycgh.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843874/scs_6_ibhjsg.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_2_hfqrzb.jpg" width="230" style="margin:10px;"/>
+</p>
+
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775844514/scs_3_eyq2bd.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_5_tnoqt6.jpg" width="230" style="margin:10px;"/>
+</p>
 
 ---
-Developed by [Mohd Umar](https://github.com/yourusername)
+Developed by [Mohd Afzal](https://github.com/mohdafzal57)
