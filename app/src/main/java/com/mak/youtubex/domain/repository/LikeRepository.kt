@@ -11,7 +11,5 @@ interface LikeRepository {
 
     suspend fun toggleCommentLike(commentId: String): Result<Like, NetworkError>
 
-    suspend fun toggleTweetLike(tweetId: String): Result<Like, NetworkError>
-
     suspend fun getLikedVideos(): Result<List<Video>, NetworkError>
 }

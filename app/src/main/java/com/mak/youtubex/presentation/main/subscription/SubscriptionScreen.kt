@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,11 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -60,6 +60,7 @@ fun SubscriptionScreen(
     onNavigateToChannel: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf<SubscriptionItem?>(null) }
@@ -71,7 +72,7 @@ fun SubscriptionScreen(
             when (event) {
                 is SubscriptionEvent.Error -> {
                     snackbarHostState.showSnackbar(
-                        message = event.message,
+                        message = event.message.asString(context),
                         duration = SnackbarDuration.Short
                     )
                 }
@@ -79,26 +80,25 @@ fun SubscriptionScreen(
         }
     }
 
-    // 1. Added Scaffold
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = "Subscriptions",
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
-    ) { innerPadding -> // 2. Use padding from scaffold
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // Apply scaffold padding
+                .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
             when (val state = uiState) {
@@ -108,19 +108,19 @@ fun SubscriptionScreen(
 
                 is SubscriptionUiState.Error -> {
                     ErrorScreen(
-                        message = state.message,
+                        message = state.message.asString(),
                         onRetry = viewModel::refreshSubscriptions
                     )
                 }
 
                 is SubscriptionUiState.Success -> {
-                    if (state.subscriptions.isEmpty()) {
-                        EmptyScreen()
-                    } else {
-                        YTPullToRefreshBox(
-                            isRefreshing = state.isRefreshing,
-                            onRefresh = viewModel::refreshSubscriptions
-                        ) {
+                    YTPullToRefreshBox(
+                        isRefreshing = state.isRefreshing,
+                        onRefresh = viewModel::refreshSubscriptions
+                    ) {
+                        if (state.subscriptions.isEmpty()) {
+                            EmptyScreen()
+                        } else {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(vertical = 8.dp)
@@ -146,7 +146,6 @@ fun SubscriptionScreen(
         }
     }
 
-    // Handle Bottom Sheet Logic
     if (showBottomSheet && selectedItem != null) {
         NotificationSettingsSheet(
             onDismiss = { showBottomSheet = false },
@@ -158,7 +157,7 @@ fun SubscriptionScreen(
         )
     }
 }
-// --- List Item ---
+
 @Composable
 fun SubscriptionItemRow(
     item: SubscriptionItem,
@@ -172,52 +171,71 @@ fun SubscriptionItemRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar
         AsyncImage(
             model = item.imageUrl,
             contentDescription = null,
             modifier = Modifier
-                .size(48.dp)
+                .size(52.dp)
                 .clip(CircleShape)
-                .background(Color.LightGray),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentScale = ContentScale.Crop
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Text Info
         Column(modifier = Modifier.weight(1f)) {
-            Text(item.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(item.handle, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            Text(
+                text = item.name,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                maxLines = 1
+            )
+            Text(
+                text = item.handle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
         }
 
-        // Bell Icon
         IconButton(onClick = onNotificationClick) {
             Icon(
                 imageVector = if (item.isNotificationEnabled) Icons.Filled.Notifications else Icons.Outlined.Notifications,
                 contentDescription = "Notifications",
-                tint = MaterialTheme.colorScheme.onSurface
+                tint = if (item.isNotificationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
 
-// --- Bottom Sheet ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationSettingsSheet(
     onDismiss: () -> Unit,
     onUnsubscribe: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(bottom = 32.dp)) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .size(width = 32.dp, height = 4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+            )
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
             Text(
-                "Notifications",
-                style = MaterialTheme.typography.titleLarge,
+                text = "Manage Subscriptions",
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
             )
 
-            // Unsubscribe Option
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -225,15 +243,22 @@ fun NotificationSettingsSheet(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Outlined.PersonRemove, null)
+                Icon(
+                    imageVector = Icons.Outlined.PersonRemove,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Unsubscribe")
+                Text(
+                    text = "Unsubscribe",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
 }
 
-// --- Error & Empty Views ---
 @Composable
 fun ErrorScreen(message: String, onRetry: () -> Unit) {
     Column(
@@ -242,19 +267,34 @@ fun ErrorScreen(message: String, onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            Icons.Outlined.CloudOff,
-            null,
-            Modifier.size(64.dp),
+            imageVector = Icons.Outlined.CloudOff,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.error
         )
-        Text(message, modifier = Modifier.padding(16.dp))
-        Button(onClick = onRetry) { Text("Retry") }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onRetry) {
+            Text("Retry")
+        }
     }
 }
 
 @Composable
 fun EmptyScreen() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("No subscriptions yet")
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "No subscriptions yet",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

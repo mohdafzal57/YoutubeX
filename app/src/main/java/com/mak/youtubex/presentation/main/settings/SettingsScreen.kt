@@ -24,9 +24,8 @@ import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
-    viewModel: ProfileViewModel = hiltViewModel(),
-    onLogoutSuccess: () -> Unit = {}
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = LocalSnackbarHostState.current
@@ -34,20 +33,19 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is ProfileEvent.ShowMessage -> {
+                is SettingsEvent.ShowMessage -> {
                     snackbarHostState.showSnackbar(
                         message = event.message,
                         duration = SnackbarDuration.Short
                     )
                 }
-                is ProfileEvent.ShowError -> {
+                is SettingsEvent.ShowError -> {
                     snackbarHostState.showSnackbar(
                         message = event.error,
                         duration = SnackbarDuration.Long,
                         actionLabel = "Dismiss"
                     )
                 }
-                is ProfileEvent.NavigateToLogin -> onLogoutSuccess()
             }
         }
     }
@@ -55,13 +53,13 @@ fun ProfileScreen(
     val avatarLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.onAction(ProfileAction.UpdateAvatar(it)) }
+        uri?.let { viewModel.onAction(SettingsAction.UpdateAvatar(it)) }
     }
 
     val coverImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.onAction(ProfileAction.UpdateCoverImage(it)) }
+        uri?.let { viewModel.onAction(SettingsAction.UpdateCoverImage(it)) }
     }
 
     Scaffold(
@@ -102,20 +100,20 @@ fun ProfileScreen(
                 state.error != null && state.userProfile == null -> {
                     ErrorContent(
                         error = state.error!!,
-                        onRetry = { viewModel.onAction(ProfileAction.LoadUserProfile) },
+                        onRetry = { viewModel.onAction(SettingsAction.LoadUserSettings) },
                         modifier = Modifier.align(Alignment.Center),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
 
                 state.userProfile != null -> {
-                    ProfileScreenContent(
+                    SettingsContent(
                         userProfile = state.userProfile!!,
                         onAvatarClick = { avatarLauncher.launch("image/*") },
                         onCoverImageClick = { coverImageLauncher.launch("image/*") },
-                        onEditProfile = { viewModel.onAction(ProfileAction.ShowEditProfileDialog) },
-                        onChangePassword = { viewModel.onAction(ProfileAction.ShowChangePasswordDialog) },
-                        onLogout = { viewModel.onAction(ProfileAction.Logout) }
+                        onEditProfile = { viewModel.onAction(SettingsAction.ShowEditSettingsDialog) },
+                        onChangePassword = { viewModel.onAction(SettingsAction.ShowChangePasswordDialog) },
+                        onLogout = { viewModel.onAction(SettingsAction.Logout) }
                     )
                 }
             }
@@ -124,18 +122,18 @@ fun ProfileScreen(
                 EditProfileDialog(
                     currentFullName = state.userProfile?.fullName ?: "",
                     currentEmail = state.userProfile?.email ?: "",
-                    onDismiss = { viewModel.onAction(ProfileAction.DismissEditProfileDialog) },
+                    onDismiss = { viewModel.onAction(SettingsAction.DismissEditSettingsDialog) },
                     onSave = { fullName, email ->
-                        viewModel.onAction(ProfileAction.UpdateAccountDetails(fullName, email))
+                        viewModel.onAction(SettingsAction.UpdateAccountDetails(fullName, email))
                     }
                 )
             }
 
             if (state.showChangePasswordDialog) {
                 ChangePasswordDialog(
-                    onDismiss = { viewModel.onAction(ProfileAction.DismissChangePasswordDialog) },
+                    onDismiss = { viewModel.onAction(SettingsAction.DismissChangePasswordDialog) },
                     onSave = { oldPassword, newPassword ->
-                        viewModel.onAction(ProfileAction.ChangePassword(oldPassword, newPassword))
+                        viewModel.onAction(SettingsAction.ChangePassword(oldPassword, newPassword))
                     }
                 )
             }

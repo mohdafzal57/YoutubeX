@@ -28,11 +28,6 @@ class LikeRepositoryImpl @Inject constructor(
             likeApi.toggleCommentLike(commentId)
         }.map { it.toDomain() }
 
-    override suspend fun toggleTweetLike(tweetId: String): Result<Like, NetworkError> =
-        safeCall {
-            likeApi.toggleTweetLike(tweetId)
-        }.map { it.toDomain() }
-
     override suspend fun getLikedVideos(): Result<List<Video>, NetworkError> =
         safeCall {
             likeApi.getLikedVideos()
@@ -40,4 +35,3 @@ class LikeRepositoryImpl @Inject constructor(
             list.map { it.toDomain() }
         }
 }
-

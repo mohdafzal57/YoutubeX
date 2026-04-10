@@ -20,11 +20,6 @@ interface LikeApi {
         @Path("commentId") commentId: String
     ): Response<ApiResponse<LikeDto>>
 
-    @POST("likes/toggle/t/{tweetId}")
-    suspend fun toggleTweetLike(
-        @Path("tweetId") tweetId: String
-    ): Response<ApiResponse<LikeDto>>
-
     @GET("likes/videos")
     suspend fun getLikedVideos(): Response<ApiResponse<List<VideoDto>>>
 }

@@ -21,45 +21,45 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileViewModel @Inject constructor(
+class SettingsViewModel @Inject constructor(
     private val userRepository: UserRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ProfileUiState())
-    val state: StateFlow<ProfileUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(SettingsUiState())
+    val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
-    private val _events = Channel<ProfileEvent>()
+    private val _events = Channel<SettingsEvent>()
     val events = _events.receiveAsFlow()
 
     init {
         loadUserProfile()
     }
 
-    fun onAction(intent: ProfileAction) {
-        when (intent) {
-            is ProfileAction.LoadUserProfile -> loadUserProfile()
-            is ProfileAction.UpdateAvatar -> updateAvatar(intent.uri)
-            is ProfileAction.UpdateCoverImage -> updateCoverImage(intent.uri)
-            is ProfileAction.UpdateAccountDetails -> updateAccountDetails(
-                intent.fullName,
-                intent.email
+    fun onAction(action: SettingsAction) {
+        when (action) {
+            is SettingsAction.LoadUserSettings -> loadUserProfile()
+            is SettingsAction.UpdateAvatar -> updateAvatar(action.uri)
+            is SettingsAction.UpdateCoverImage -> updateCoverImage(action.uri)
+            is SettingsAction.UpdateAccountDetails -> updateAccountDetails(
+                action.fullName,
+                action.email
             )
 
-            is ProfileAction.ChangePassword -> changePassword(
-                intent.oldPassword,
-                intent.newPassword
+            is SettingsAction.ChangePassword -> changePassword(
+                action.oldPassword,
+                action.newPassword
             )
 
-            is ProfileAction.Logout -> logout()
-            is ProfileAction.ShowEditProfileDialog -> _state.update { it.copy(showEditDialog = true) }
-            is ProfileAction.DismissEditProfileDialog -> _state.update { it.copy(showEditDialog = false) }
-            is ProfileAction.ShowChangePasswordDialog -> _state.update {
+            is SettingsAction.Logout -> logout()
+            is SettingsAction.ShowEditSettingsDialog -> _state.update { it.copy(showEditDialog = true) }
+            is SettingsAction.DismissEditSettingsDialog -> _state.update { it.copy(showEditDialog = false) }
+            is SettingsAction.ShowChangePasswordDialog -> _state.update {
                 it.copy(
                     showChangePasswordDialog = true
                 )
             }
 
-            is ProfileAction.DismissChangePasswordDialog -> _state.update {
+            is SettingsAction.DismissChangePasswordDialog -> _state.update {
                 it.copy(
                     showChangePasswordDialog = false
                 )
@@ -81,7 +81,7 @@ class ProfileViewModel @Inject constructor(
                 }
                 .onFailure { error ->
                     _state.update { it.copy(error = error.toString(), isLoading = false) }
-                    _events.send(ProfileEvent.ShowError(error.toString()))
+                    _events.send(SettingsEvent.ShowError(error.toString()))
                 }
         }
     }
@@ -97,11 +97,11 @@ class ProfileViewModel @Inject constructor(
                             isLoading = false
                         )
                     }
-                    _events.send(ProfileEvent.ShowMessage("Avatar updated"))
+                    _events.send(SettingsEvent.ShowMessage("Avatar updated"))
                 }
                 .onFailure { error ->
                     _state.update { it.copy(isLoading = false) }
-                    _events.send(ProfileEvent.ShowError(error.toString()))
+                    _events.send(SettingsEvent.ShowError(error.toString()))
                 }
         }
     }
@@ -117,11 +117,11 @@ class ProfileViewModel @Inject constructor(
                             isLoading = false
                         )
                     }
-                    _events.send(ProfileEvent.ShowMessage("Cover image updated"))
+                    _events.send(SettingsEvent.ShowMessage("Cover image updated"))
                 }
                 .onFailure { error ->
                     _state.update { it.copy(isLoading = false) }
-                    _events.send(ProfileEvent.ShowError(error.toString()))
+                    _events.send(SettingsEvent.ShowError(error.toString()))
                 }
         }
     }
@@ -143,11 +143,11 @@ class ProfileViewModel @Inject constructor(
                             isLoading = false
                         )
                     }
-                    _events.send(ProfileEvent.ShowMessage("Profile updated"))
+                    _events.send(SettingsEvent.ShowMessage("Profile updated"))
                 }
                 .onFailure { error ->
                     _state.update { it.copy(isLoading = false) }
-                    _events.send(ProfileEvent.ShowError(error.toString()))
+                    _events.send(SettingsEvent.ShowError(error.toString()))
                 }
         }
     }
@@ -155,7 +155,7 @@ class ProfileViewModel @Inject constructor(
     private fun changePassword(oldPassword: String, newPassword: String) {
         viewModelScope.launch {
             if (oldPassword.isEmpty() || newPassword.isEmpty()) {
-                _events.send(ProfileEvent.ShowError("Password cannot be empty"))
+                _events.send(SettingsEvent.ShowError("Password cannot be empty"))
                 return@launch
             }
             val request = ChangePasswordRequest(
@@ -166,11 +166,11 @@ class ProfileViewModel @Inject constructor(
             userRepository.changePassword(request)
                 .onSuccess {
                     _state.update { it.copy(isLoading = false) }
-                    _events.send(ProfileEvent.ShowMessage("Password changed"))
+                    _events.send(SettingsEvent.ShowMessage("Password changed"))
                 }
                 .onFailure { error ->
                     _state.update { it.copy(isLoading = false) }
-                    _events.send(ProfileEvent.ShowError(error.toString()))
+                    _events.send(SettingsEvent.ShowError(error.toString()))
                 }
         }
     }
@@ -179,19 +179,17 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             userRepository.signOut()
-                .onSuccess {
-                    _state.update { it.copy(isLoading = false) }
-                    _events.send(ProfileEvent.NavigateToLogin)
-                }
-                .onFailure {
-                    _state.update { it.copy(isLoading = false) }
-                    _events.send(ProfileEvent.ShowError(it.toString()))
-                }
+            _state.update { it.copy(isLoading = false) }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        println("VIEWMODEL_S Profile cleared")
     }
 }
 
-data class ProfileUiState(
+data class SettingsUiState(
     val userProfile: UserProfile? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -199,23 +197,22 @@ data class ProfileUiState(
     val showChangePasswordDialog: Boolean = false
 )
 
-sealed interface ProfileAction {
-    data object LoadUserProfile : ProfileAction
-    data class UpdateAvatar(val uri: Uri) : ProfileAction
-    data class UpdateCoverImage(val uri: Uri) : ProfileAction
-    data class UpdateAccountDetails(val fullName: String, val email: String) : ProfileAction
-    data class ChangePassword(val oldPassword: String, val newPassword: String) : ProfileAction
-    data object Logout : ProfileAction
-    data object ShowEditProfileDialog : ProfileAction
-    data object DismissEditProfileDialog : ProfileAction
-    data object ShowChangePasswordDialog : ProfileAction
-    data object DismissChangePasswordDialog : ProfileAction
+sealed interface SettingsAction {
+    data object LoadUserSettings : SettingsAction
+    data class UpdateAvatar(val uri: Uri) : SettingsAction
+    data class UpdateCoverImage(val uri: Uri) : SettingsAction
+    data class UpdateAccountDetails(val fullName: String, val email: String) : SettingsAction
+    data class ChangePassword(val oldPassword: String, val newPassword: String) : SettingsAction
+    data object Logout : SettingsAction
+    data object ShowEditSettingsDialog : SettingsAction
+    data object DismissEditSettingsDialog : SettingsAction
+    data object ShowChangePasswordDialog : SettingsAction
+    data object DismissChangePasswordDialog : SettingsAction
 }
 
-sealed interface ProfileEvent {
-    data class ShowMessage(val message: String) : ProfileEvent
-    data class ShowError(val error: String) : ProfileEvent
-    data object NavigateToLogin : ProfileEvent
+sealed interface SettingsEvent {
+    data class ShowMessage(val message: String) : SettingsEvent
+    data class ShowError(val error: String) : SettingsEvent
 }
 
 data class UserProfile(

@@ -1,5 +1,1 @@
-package com.mak.youtubex.data.remote.dto.tweet
-
-data class CreateTweetRequest(
-    val content: String
-)
+// This file is marked for deletion

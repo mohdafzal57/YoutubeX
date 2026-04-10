@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 @Composable
-fun ProfileScreenContent(
+fun SettingsContent(
     userProfile: UserProfile,
     onAvatarClick: () -> Unit,
     onCoverImageClick: () -> Unit,

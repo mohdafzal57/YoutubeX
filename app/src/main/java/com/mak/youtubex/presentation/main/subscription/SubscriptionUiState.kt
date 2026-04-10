@@ -1,6 +1,7 @@
 package com.mak.youtubex.presentation.main.subscription
 
 import androidx.compose.runtime.Immutable
+import com.mak.youtubex.core.util.UiText
 
 // 1. Data Model
 // @Immutable is a hint to the Compose compiler to skip unnecessary recompositions
@@ -26,6 +27,6 @@ sealed interface SubscriptionUiState {
     ) : SubscriptionUiState
 
     data class Error(
-        val message: String
+        val message: UiText
     ) : SubscriptionUiState
 }

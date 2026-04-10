@@ -14,7 +14,6 @@ import com.mak.youtubex.core.di.TokenRefreshClient
 import com.mak.youtubex.data.remote.api.LikeApi
 import com.mak.youtubex.data.remote.api.RefreshTokenApi
 import com.mak.youtubex.data.remote.api.SubscriptionApi
-import com.mak.youtubex.data.remote.api.TweetApi
 import com.mak.youtubex.data.remote.api.UserApi
 import com.mak.youtubex.data.remote.api.VideoApi
 import com.mak.youtubex.core.data.network.auth.AuthAuthenticator
@@ -134,15 +133,6 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideTweetApi(
-        retrofitBuilder: Retrofit.Builder,
-        @AuthenticatedClient okHttpClient: OkHttpClient
-    ): TweetApi {
-        return retrofitBuilder.client(okHttpClient).build().create(TweetApi::class.java)
-    }
-
-    @Singleton
-    @Provides
     fun provideVideoApi(
         retrofitBuilder: Retrofit.Builder,
         @AuthenticatedClient okHttpClient: OkHttpClient
@@ -196,21 +186,3 @@ object AppModule {
         }
     }
 }
-
-/*
-    @Singleton
-    @Provides
-    fun provideOkHttpClient(accessTokenInterceptor: AccessTokenInterceptor): OkHttpClient {
-        return OkHttpClient.Builder()
-            .addInterceptor(accessTokenInterceptor)
-            .build()
-    }
-*/
-
-/*
-    @Singleton
-    @Provides
-    fun provideTweetApi(retrofitBuilder: Retrofit.Builder, okHttpClient: OkHttpClient): TweetApi {
-        return retrofitBuilder.client(okHttpClient).build().create(TweetApi::class.java)
-    }
-*/

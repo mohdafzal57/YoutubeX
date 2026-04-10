@@ -91,9 +91,6 @@ fun NavGraphBuilder.mainNavGraph(
         composable(Screen.Settings.route) {
             SettingsScreen()
         }
-        composable(Screen.Profile.route) {
-            SettingsScreen()
-        }
 
         composable(
             route = Screen.Player.route,

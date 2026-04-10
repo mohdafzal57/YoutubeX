@@ -2,10 +2,12 @@ package com.mak.youtubex.presentation.main.subscription
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mak.youtubex.domain.model.SubscriptionProfile
-import com.mak.youtubex.domain.repository.SubscriptionRepository
 import com.mak.youtubex.core.data.util.onFailure
 import com.mak.youtubex.core.data.util.onSuccess
+import com.mak.youtubex.core.util.UiText
+import com.mak.youtubex.domain.model.SubscriptionProfile
+import com.mak.youtubex.domain.repository.SubscriptionRepository
+import com.mak.youtubex.utils.asStringRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,51 +37,56 @@ class SubscriptionViewModel @Inject constructor(
         fetchSubscriptions(isRefresh = true)
     }
 
-
     private fun fetchSubscriptions(isRefresh: Boolean) {
         viewModelScope.launch {
-            val current = _uiState.value
+            val currentState = _uiState.value
 
-            _uiState.value = if (isRefresh && _uiState.value is SubscriptionUiState.Success) {
-                SubscriptionUiState.Success(
-                    isRefreshing = true,
-                    subscriptions = (current as SubscriptionUiState.Success).subscriptions
-                )
+            if (isRefresh && currentState is SubscriptionUiState.Success) {
+                _uiState.value = currentState.copy(isRefreshing = true)
             } else {
-                SubscriptionUiState.Loading
+                _uiState.value = SubscriptionUiState.Loading
             }
+
             repository.getUserSubscribedChannels()
                 .onSuccess { profiles ->
                     _uiState.value = SubscriptionUiState.Success(
-                        isRefreshing = false,
-                        subscriptions = profiles.map { it.toUiModel() }
+                        subscriptions = profiles.map { it.toUiModel() },
+                        isRefreshing = false
                     )
                 }
-                .onFailure {
-                    _uiEvent.emit(SubscriptionEvent.Error(it.toString()))
+                .onFailure { error ->
+                    val uiText = UiText.StringResource(error.asStringRes())
+                    if (isRefresh && _uiState.value is SubscriptionUiState.Success) {
+                        _uiState.value = (_uiState.value as SubscriptionUiState.Success).copy(isRefreshing = false)
+                        _uiEvent.emit(SubscriptionEvent.Error(uiText))
+                    } else {
+                        _uiState.value = SubscriptionUiState.Error(uiText)
+                    }
                 }
         }
     }
 
     fun unsubscribe(channelId: String) {
-        val currentState = _uiState.value as? SubscriptionUiState.Success ?: return
-
-        val updatedList = currentState.subscriptions.filterNot { it.id == channelId }
-        _uiState.value = currentState.copy(subscriptions = updatedList)
-
         viewModelScope.launch {
-            repository.toggleSubscription(channelId)
-        }
-    }
+            val currentState = _uiState.value as? SubscriptionUiState.Success ?: return@launch
+            
+            // Optimistic update
+            val originalList = currentState.subscriptions
+            val updatedList = originalList.filterNot { it.id == channelId }
+            _uiState.value = currentState.copy(subscriptions = updatedList)
 
-    override fun onCleared() {
-        super.onCleared()
-        println("VIEWMODEL_S subscription cleared")
+            repository.toggleSubscription(channelId)
+                .onFailure { error ->
+                    // Revert on failure
+                    _uiState.value = currentState.copy(subscriptions = originalList)
+                    _uiEvent.emit(SubscriptionEvent.Error(UiText.StringResource(error.asStringRes())))
+                }
+        }
     }
 }
 
 sealed interface SubscriptionEvent {
-    data class Error(val message: String) : SubscriptionEvent
+    data class Error(val message: UiText) : SubscriptionEvent
 }
 
 private fun SubscriptionProfile.toUiModel() = SubscriptionItem(
