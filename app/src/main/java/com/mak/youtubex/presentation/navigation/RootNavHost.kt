@@ -49,6 +49,9 @@ fun RootNavHost(
     appState: YTAppState
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val navHostKey = remember(authState is AuthState.Authenticated) {
+        if (authState is AuthState.Authenticated) "auth_zone" else "guest_zone"
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -85,7 +88,13 @@ fun RootNavHost(
 
             if (currentDest != "bootstrap" && !isInAuth) {
                 navController.navigate(NavGraphs.AUTH) {
-                    popUpTo(0) { inclusive = true }
+                    // 1. Pop everything up to the root
+                    popUpTo(0) {
+                        inclusive = true
+                    }
+                    // 2. Ensure we don't accidentally restore a state from the "main" graph
+                    launchSingleTop = true
+                    restoreState = false
                 }
             }
         }
@@ -134,6 +143,7 @@ fun RootNavHost(
                 NavHost(
                     navController = navController,
                     startDestination = "bootstrap",
+                    route = navHostKey,
                     modifier = Modifier
                         .padding(innerPadding)
                         .consumeWindowInsets(innerPadding)
@@ -170,12 +180,7 @@ fun RootNavHost(
                     )
 
                     mainNavGraph(
-                        navController = navController,
-                        onNavigateToAuth = {
-                            navController.navigate(NavGraphs.AUTH) {
-                                popUpTo(NavGraphs.MAIN) { inclusive = true }
-                            }
-                        }
+                        navController = navController
                     )
                 }
             }

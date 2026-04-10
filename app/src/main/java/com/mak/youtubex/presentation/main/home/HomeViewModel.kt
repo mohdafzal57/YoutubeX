@@ -19,4 +19,8 @@ class HomeViewModel @Inject constructor(
         videoRepository.getVideoFeed()
             .cachedIn(viewModelScope)
 
+    override fun onCleared() {
+        super.onCleared()
+        println("VIEWMODEL_S Home cleared")
+    }
 }

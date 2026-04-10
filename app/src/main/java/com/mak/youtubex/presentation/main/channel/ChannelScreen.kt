@@ -24,9 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,9 +55,9 @@ import com.mak.youtubex.presentation.main.common.BottomLoader
 import com.mak.youtubex.presentation.main.common.FullScreenLoader
 import com.mak.youtubex.presentation.main.common.RetryFooter
 import com.mak.youtubex.presentation.main.common.ShareVideoButton
-import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
+import com.mak.youtubex.presentation.main.social_feed.CommunityPostCard
 import com.mak.youtubex.presentation.main.subscription.NotificationSettingsSheet
-import com.mak.youtubex.presentation.main.social_feed.PostItem
+import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 
 @Composable
 fun ChannelScreen(
@@ -226,21 +223,23 @@ private fun ChannelContent(
                         is LoadState.Loading -> {
                             item { BottomLoader() }
                         }
+
                         is LoadState.Error -> {
                             item { RetryFooter(onRetry = { videos.retry() }) }
                         }
+
                         else -> Unit
                     }
                 } else {
                     // 🔹 Posts List
                     item { Spacer(modifier = Modifier.height(8.dp)) }
-                    
+
                     items(
                         count = posts.itemCount,
                         key = posts.itemKey { it.id }
                     ) { index ->
                         posts[index]?.let { post ->
-                            PostItem(
+                            CommunityPostCard(
                                 post = post,
                                 onAction = { /* Handle post actions if needed */ },
                                 onNavigateToChannel = { /* Already on channel */ },
@@ -254,9 +253,11 @@ private fun ChannelContent(
                         is LoadState.Loading -> {
                             item { BottomLoader() }
                         }
+
                         is LoadState.Error -> {
                             item { RetryFooter(onRetry = { posts.retry() }) }
                         }
+
                         else -> Unit
                     }
                 }
@@ -402,6 +403,7 @@ fun FilterChipsRow(
         }
     }
 }
+
 @Composable
 fun FilterChipItem(
     text: String,
@@ -439,6 +441,7 @@ fun FilterChipItem(
         }
     }
 }
+
 @Composable
 fun VideoCard(video: UserVideo, onClick: () -> Unit) {
     Row(

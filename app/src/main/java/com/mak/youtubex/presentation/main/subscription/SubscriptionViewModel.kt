@@ -72,16 +72,21 @@ class SubscriptionViewModel @Inject constructor(
         }
     }
 
-    private fun SubscriptionProfile.toUiModel() = SubscriptionItem(
-        id = id,
-        name = username,
-        handle = "@$username",
-        imageUrl = avatarUrl,
-        hasNewContent = false,
-        isNotificationEnabled = true
-    )
+    override fun onCleared() {
+        super.onCleared()
+        println("VIEWMODEL_S subscription cleared")
+    }
 }
 
 sealed interface SubscriptionEvent {
     data class Error(val message: String) : SubscriptionEvent
 }
+
+private fun SubscriptionProfile.toUiModel() = SubscriptionItem(
+    id = id,
+    name = username,
+    handle = "@$username",
+    imageUrl = avatarUrl,
+    hasNewContent = false,
+    isNotificationEnabled = true
+)

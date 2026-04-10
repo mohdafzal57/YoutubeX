@@ -7,8 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mak.youtubex.domain.model.VideoUploadRequest
 import com.mak.youtubex.domain.repository.VideoRepository
-import com.mak.youtubex.core.data.util.onFailure
-import com.mak.youtubex.core.data.util.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,23 +52,14 @@ class UploadVideoDetailViewModel @Inject constructor(
         val currentThumbnail = _uiState.value.thumbnailUri ?: return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
             val request = VideoUploadRequest(
                 videoFile = currentUri,
                 thumbnail = currentThumbnail,
                 title = _uiState.value.title,
                 description = _uiState.value.description
             )
+            _events.emit(UploadEvent.NavigateHome)
             uploadVideoRepository.uploadVideo(request)
-                .onSuccess {
-                    _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(UploadEvent.NavigateHome)
-                }
-                .onFailure {
-                    _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(UploadEvent.ShowError(it.toString()))
-                }
         }
     }
 }
@@ -80,11 +69,53 @@ data class VideoDetailsUiState(
     val description: String = "",
     val thumbnailUri: Uri? = null,
     val videoUri: Uri? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
 )
 
 sealed class UploadEvent {
     object NavigateHome : UploadEvent()
-    data class ShowError(val message: String) : UploadEvent()
 }
+
+/***Generate Multiple Frames
+ * fun generateThumbnails(context: Context) {
+ *     val uri = videoUri ?: return
+ *
+ *     viewModelScope.launch(Dispatchers.IO) {
+ *         try {
+ *             val retriever = MediaMetadataRetriever()
+ *             retriever.setDataSource(context, uri)
+ *
+ *             val durationMs = retriever
+ *                 .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+ *                 ?.toLongOrNull() ?: 0L
+ *
+ *             if (durationMs <= 0) return@launch
+ *
+ *             val frames = mutableListOf<Bitmap>()
+ *
+ *             val percentages = listOf(0.1, 0.3, 0.5, 0.7, 0.9)
+ *
+ *             for (p in percentages) {
+ *                 val timeUs = (durationMs * p * 1000).toLong()
+ *
+ *                 val bitmap = retriever.getFrameAtTime(
+ *                     timeUs,
+ *                     MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+ *                 )
+ *
+ *                 bitmap?.let { frames.add(it) }
+ *             }
+ *
+ *             retriever.release()
+ *
+ *             withContext(Dispatchers.Main) {
+ *                 _uiState.update {
+ *                     it.copy(thumbnailOptions = frames)
+ *                 }
+ *             }
+ *
+ *         } catch (e: Exception) {
+ *             e.printStackTrace()
+ *         }
+ *     }
+ * }
+ */

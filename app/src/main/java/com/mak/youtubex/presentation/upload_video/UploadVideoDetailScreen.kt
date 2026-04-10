@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,27 +50,21 @@ fun UploadVideoDetailScreen(
     onNavigateToHome: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     val thumbnailPicker = rememberThumbnailPicker {
         viewModel.onThumbnailChange(it)
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.events) {
         viewModel.events.collect {
             when (it) {
                 UploadEvent.NavigateHome -> onNavigateToHome()
-                is UploadEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(
-                        message = it.message,
-                        duration = SnackbarDuration.Short
-                    )
-                }
             }
         }
     }
+
     AppScaffold(
-        title = "Upload Video",
+        title = "Add Detail",
         onBackClick = onCancel,
         showBackButton = true
     ) { paddingValues ->
@@ -88,7 +83,7 @@ fun UploadVideoDetailScreen(
                         .aspectRatio(16 / 9f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.DarkGray)
-                        .clickable(enabled = !uiState.isLoading) {
+                        .clickable {
                             thumbnailPicker.launch("image/*")
                         },
                     contentAlignment = Alignment.Center
@@ -122,7 +117,6 @@ fun UploadVideoDetailScreen(
                     label = { Text("Title") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    enabled = !uiState.isLoading
                 )
 
                 Spacer(Modifier.height(12.dp))
@@ -134,45 +128,18 @@ fun UploadVideoDetailScreen(
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
-                    enabled = !uiState.isLoading
                 )
             }
 
-            //  Action buttons
-            Row(
+            Button(
+                onClick = { viewModel.onUpload() },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                enabled = uiState.title.isNotBlank()
             ) {
-
-                OutlinedButton(
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                    enabled = !uiState.isLoading
-                ) {
-                    Text("Cancel")
-                }
-
-                Button(
-                    onClick = { viewModel.onUpload() },
-                    modifier = Modifier.weight(1f),
-                    enabled = uiState.title.isNotBlank() && !uiState.isLoading
-                ) {
-                    Text("Upload")
-                }
+                Text("Upload")
             }
         }
 
-    }
-    if (uiState.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
     }
 }
 

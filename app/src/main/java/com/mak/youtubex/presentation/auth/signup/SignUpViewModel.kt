@@ -178,6 +178,11 @@ class SignUpViewModel @Inject constructor(
             }
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+        println("VIEWMODEL_S SignUp cleared")
+    }
 }
 
 

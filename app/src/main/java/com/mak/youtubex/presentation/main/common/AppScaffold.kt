@@ -44,8 +44,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mak.youtubex.R
+import com.mak.youtubex.presentation.ui.theme.YTTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +123,7 @@ fun ErrorScreen(
         if (icon != null) {
             Box(
                 modifier = Modifier
-                    .size(Dimens.iconContainer)
+                    .size(300.dp)
                     .clip(CircleShape)
                     .background(
                         MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
@@ -131,7 +133,7 @@ fun ErrorScreen(
                 Image(
                     painter = icon,
                     contentDescription = stringResource(R.string.error_icon_desc),
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(300.dp)
                 )
             }
 
@@ -297,4 +299,79 @@ fun CenteredContent(
         verticalArrangement = Arrangement.Center,
         content = content
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AppScaffoldPreview() {
+    YTTheme {
+        AppScaffold(
+            title = "YouTubeX",
+            showBackButton = true,
+            onBackClick = {},
+            content = { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Content Area")
+                }
+            }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ErrorScreenPreview() {
+    YTTheme {
+        ErrorScreen(
+            message = "Unable to load data. Please check your internet connection.",
+            onRetry = {},
+            icon = painterResource(id = R.drawable.offline_dino_car)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EmptyStatePreview() {
+    YTTheme {
+        EmptyState(
+            title = "No videos found",
+            message = "Try searching for something else or check your internet connection.",
+            icon = Icons.Rounded.WifiOff,
+            actionText = "Refresh",
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PrimaryButtonPreview() {
+    YTTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PrimaryButton(text = "Primary Button", onClick = {})
+            PrimaryButton(text = "Loading Button", onClick = {}, isLoading = true)
+            PrimaryButton(text = "Disabled Button", onClick = {}, enabled = false)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CenteredContentPreview() {
+    YTTheme {
+        CenteredContent {
+            Text(text = "Centered Content", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = "This content is centered both horizontally and vertically.")
+        }
+    }
 }

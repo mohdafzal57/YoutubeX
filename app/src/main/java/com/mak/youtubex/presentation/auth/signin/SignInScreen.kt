@@ -47,7 +47,7 @@ import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 import kotlinx.coroutines.launch
 
 @Composable
-fun SignInContent(
+fun SignInScreen(
     viewModel: SignInViewModel = hiltViewModel(),
     onNavigateToSignUp: () -> Unit,
     onNavigateToHome: () -> Unit

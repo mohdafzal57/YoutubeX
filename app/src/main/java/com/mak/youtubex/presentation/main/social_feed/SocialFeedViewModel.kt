@@ -127,4 +127,9 @@ class SocialFeedViewModel @Inject constructor(
             }
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+        println("VIEWMODEL_S SocialFeed cleared")
+    }
 }

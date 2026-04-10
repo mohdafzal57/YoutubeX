@@ -33,7 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mak.youtubex.R
 import com.mak.youtubex.presentation.navigation.Screen
-import com.mak.youtubex.presentation.upload.create_post.PostScreen
+import com.mak.youtubex.presentation.upload.create_post.CreatePostScreen
 import com.mak.youtubex.presentation.upload.ui.theme.YoutubeX
 import com.mak.youtubex.presentation.upload.video_picker.VideoPickerScreen
 import com.mak.youtubex.presentation.upload_video.ModeSelector
@@ -112,7 +112,6 @@ class UploadActivity : ComponentActivity() {
                         composable(route = Screen.Short.route) {
                             ShortScreen(
                                 navigateToUploadDetail = { uri ->
-                                    // BEST PRACTICE: Use the helper function from Screen.kt
                                     navController.navigate(Screen.UploadVideoDetail.createRoute(uri.toString()))
                                 },
                                 onBackClick = { finish() },
@@ -130,13 +129,12 @@ class UploadActivity : ComponentActivity() {
                         }
 
                         composable(route = Screen.Post.route) {
-                            PostScreen(onCloseClick = { finish() })
+                            CreatePostScreen(onCloseClick = { finish() })
                         }
 
                         composable(
                             route = Screen.UploadVideoDetail.route,
                             arguments = listOf(
-                                // BEST PRACTICE: Use constant from Screen companion
                                 navArgument(Screen.ARG_VIDEO_URI) { type = NavType.StringType }
                             )
                         ) {

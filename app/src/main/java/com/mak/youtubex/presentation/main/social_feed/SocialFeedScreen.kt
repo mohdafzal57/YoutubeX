@@ -2,54 +2,30 @@ package com.mak.youtubex.presentation.main.social_feed
 
 import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.HideImage
-import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.ThumbDown
+import androidx.compose.material.icons.outlined.ThumbUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,6 +48,8 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.mak.youtubex.R
 import com.mak.youtubex.domain.model.Post
 import com.mak.youtubex.presentation.main.common.EmptyState
@@ -89,14 +67,11 @@ fun SocialFeedScreen(
     viewModel: SocialFeedViewModel = hiltViewModel()
 ) {
     val posts = viewModel.posts.collectAsLazyPagingItems()
-
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showCommentsForPost by remember { mutableStateOf<Post?>(null) }
 
-    // True ONLY when user triggered a pull-to-refresh on an already-populated list.
-    val isUserRefreshing = posts.loadState.refresh is LoadState.Loading
-            && posts.itemCount > 0
+    val isUserRefreshing = posts.loadState.refresh is LoadState.Loading && posts.itemCount > 0
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -107,7 +82,6 @@ fun SocialFeedScreen(
             )
         },
     ) { innerPadding ->
-
         if (showCommentsForPost != null) {
             ModalBottomSheet(
                 onDismissRequest = { showCommentsForPost = null },
@@ -135,21 +109,17 @@ fun SocialFeedScreen(
                 onRefresh = { posts.refresh() },
                 modifier = Modifier.fillMaxSize()
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(
                         count = posts.itemCount,
                         key = posts.itemKey { it.id },
                         contentType = posts.itemContentType { "post" }
                     ) { index ->
                         posts[index]?.let { post ->
-                            PostItem(
+                            CommunityPostCard(
                                 post = post,
                                 onAction = viewModel::onAction,
-                                onCommentClick = {
-                                    showCommentsForPost = post
-                                },
+                                onCommentClick = { showCommentsForPost = post },
                                 onNavigateToChannel = { onNavigateToChannel(post.username) }
                             )
                         }
@@ -163,7 +133,10 @@ fun SocialFeedScreen(
                                     .padding(16.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                CircularProgressIndicator()
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
+                                )
                             }
                         }
                     }
@@ -189,7 +162,7 @@ fun SocialFeedScreen(
 }
 
 @Composable
-fun PostItem(
+fun CommunityPostCard(
     post: Post,
     onAction: (SocialFeedAction) -> Unit,
     onNavigateToChannel: () -> Unit,
@@ -200,210 +173,438 @@ fun PostItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
+        CommunityPostHeader(
+            avatarUrl = post.avatarUrl,
+            username = post.username,
+            timestamp = post.timestamp,
+            onAvatarClick = onNavigateToChannel,
+            onMoreClick = { }
+        )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-
-            AsyncImage(
-                model = post.avatarUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onNavigateToChannel),
-                placeholder = ColorPainter(MaterialTheme.colorScheme.surface)
+        if (post.body.isNotBlank()) {
+            CommunityPostText(
+                text = post.body,
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
             )
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-
-                    Text(
-                        text = post.username,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Text(
-                        text = post.timestamp,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
-
-                if (post.body.isNotBlank()) {
-                    Text(
-                        text = post.body,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            lineHeight = 20.sp,
-                            letterSpacing = 0.1.sp
-                        )
-                    )
-                }
-            }
         }
 
         if (post.imageUrls.isNotEmpty()) {
-            ImagePager(
+            CommunityPostMedia(
                 images = post.imageUrls,
-                onDoubleTap = {
-                    onAction(SocialFeedAction.ToggleLike(post.id))
-                }
+                onDoubleTap = { onAction(SocialFeedAction.ToggleLike(post.id)) }
             )
         }
 
-        PostActions(
+        CommunityPostInteraction(
             isLiked = post.isLiked,
             likeCount = post.likeCount,
             commentCount = post.commentCount,
-            onLikeToggle = {
-                onAction(SocialFeedAction.ToggleLike(post.id))
-            },
-            onSharePost = {
-                sharePost(
-                    context,
-                    post.id,
-                    post.username,
-                    post.body
-                )
-            },
-            onCommentClick = { onCommentClick() }
+            onLikeToggle = { onAction(SocialFeedAction.ToggleLike(post.id)) },
+            onDislike = { },
+            onShare = { sharePost(context, post.id, post.username, post.body) },
+            onCommentClick = onCommentClick
         )
 
-        HorizontalDivider(
-            thickness = 0.5.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
         )
     }
 }
 
-
 @Composable
-fun ImagePager(
-    images: List<String>,
-    onDoubleTap: () -> Unit
+private fun CommunityPostHeader(
+    avatarUrl: String,
+    username: String,
+    timestamp: String,
+    onAvatarClick: () -> Unit,
+    onMoreClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(12.dp)
-    val isDark = isSystemInDarkTheme()
-    val borderColor = if (isDark) {
-        Color.DarkGray
-    } else {
-        Color.Transparent
-    }
-    LazyRow(
-        contentPadding = PaddingValues(start = 60.dp, end = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (images.size > 1) {
-            items(
-                items = images,
-                key = { it },
-                contentType = { "image" }
-            ) { imageUrl ->
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = null,
-                    placeholder = ColorPainter(MaterialTheme.colorScheme.surface),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .heightIn(max = 288.dp)
-                        .clip(shape)
-                        .border(
-                            width = 0.7.dp,
-                            color = borderColor,
-                            shape = shape
-                        )
-                        .pointerInput(Unit) {
-                            detectTapGestures(onDoubleTap = { onDoubleTap() })
-                        }
-                )
-            }
-        } else {
-            item {
-                AsyncImage(
-                    model = images[0],
-                    contentDescription = null,
-                    placeholder = ColorPainter(MaterialTheme.colorScheme.surface),
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .widthIn(max = 320.dp)
-                        .heightIn(min = 200.dp, max = 340.dp)
-                        .clip(shape)
-                        .border(
-                            width = 0.7.dp,
-                            color = borderColor,
-                            shape = shape
-                        )
-                        .pointerInput(Unit) {
-                            detectTapGestures(onDoubleTap = { onDoubleTap() })
-                        },
-                )
-            }
+        AsyncImage(
+            model = avatarUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onAvatarClick)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = username,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = timestamp,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(
+            onClick = onMoreClick,
+            modifier = Modifier.size(24.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun PostActions(
+private fun CommunityPostText(
+    text: String,
+    modifier: Modifier = Modifier,
+    collapsedMaxLines: Int = 5
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var isOverflowing by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                lineHeight = 20.sp,
+                letterSpacing = 0.1.sp
+            ),
+            maxLines = if (expanded) Int.MAX_VALUE else collapsedMaxLines,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { if (!expanded) isOverflowing = it.hasVisualOverflow }
+        )
+
+        if (isOverflowing || expanded) {
+            Text(
+                text = if (expanded) "Show less" else "Read more",
+                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { expanded = !expanded }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CommunityPostMedia(
+    images: List<String>,
+    modifier: Modifier = Modifier,
+    onDoubleTap: (index: Int) -> Unit = {}
+) {
+    if (images.isEmpty()) return
+
+    if (images.size == 1) {
+        CommunityPostSingleImage(
+            url = images[0],
+            modifier = modifier,
+            onDoubleTap = { onDoubleTap(0) }
+        )
+    } else {
+        CommunityPostCarousel(
+            images = images,
+            modifier = modifier,
+            onDoubleTap = onDoubleTap
+        )
+    }
+}
+
+@Composable
+private fun CommunityPostSingleImage(
+    url: String,
+    modifier: Modifier = Modifier,
+    onDoubleTap: () -> Unit
+) {
+    var isError by remember { mutableStateOf(false) }
+
+    if (isError) {
+        CommunityImageError(
+            modifier = modifier
+                .padding(horizontal = 12.dp)
+                .fillMaxWidth()
+                .height(240.dp)
+                .clip(RoundedCornerShape(8.dp))
+        )
+        return
+    }
+
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(url)
+            .crossfade(true)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .build(),
+        contentDescription = null,
+        placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
+        onError = { isError = true },
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 150.dp, 400.dp)
+            .pointerInput(url) {
+                detectTapGestures(onDoubleTap = { onDoubleTap() })
+            }
+    )
+}
+
+@Composable
+private fun CommunityPostCarousel(
+    images: List<String>,
+    modifier: Modifier = Modifier,
+    onDoubleTap: (index: Int) -> Unit
+) {
+    val listState = rememberLazyListState()
+    val snapFling = rememberSnapFlingBehavior(lazyListState = listState)
+    val total = images.size
+
+    LazyRow(
+        state = listState,
+        flingBehavior = snapFling,
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(
+            items = images,
+            key = { _, url -> url }
+        ) { index, imageUrl ->
+            CommunityCarouselItem(
+                url = imageUrl,
+                badgeText = "${index + 1}/$total",
+                onDoubleTap = { onDoubleTap(index) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CommunityCarouselItem(
+    url: String,
+    badgeText: String,
+    onDoubleTap: () -> Unit
+) {
+    var isError by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .width(300.dp)
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(12.dp))
+            .pointerInput(url) {
+                detectTapGestures(onDoubleTap = { onDoubleTap() })
+            }
+    ) {
+        if (isError) {
+            CommunityImageError(modifier = Modifier.fillMaxSize())
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(url)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
+                onError = { isError = true },
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp),
+            shape = RoundedCornerShape(4.dp),
+            color = Color.Black.copy(alpha = 0.6f)
+        ) {
+            Text(
+                text = badgeText,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                ),
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CommunityImageError(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .defaultMinSize(minWidth = 120.dp, minHeight = 120.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.BrokenImage,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(32.dp)
+        )
+    }
+}
+
+@Composable
+private fun CommunityPostInteraction(
     isLiked: Boolean,
     likeCount: String,
     commentCount: String,
     onLikeToggle: () -> Unit,
-    onCommentClick: () -> Unit,
-    onSharePost: () -> Unit
+    onDislike: () -> Unit,
+    onShare: () -> Unit,
+    onCommentClick: () -> Unit
 ) {
-    val tint = if (isLiked) ColorLike else MaterialTheme.colorScheme.onSurfaceVariant
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 56.dp)
-            .padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
-        ActionButton(
-            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-            count = likeCount,
-            tint = tint,
-            onClick = onLikeToggle
+        LikeDislikeCombinedPill(
+            isLiked = isLiked,
+            likeCount = likeCount,
+            onLikeToggle = onLikeToggle,
+            onDislike = onDislike
         )
 
-        ActionButton(
-            imageVector = Icons.Outlined.ChatBubbleOutline,
-            count = commentCount,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        CommunityInteractionChip(
+            icon = Icons.Outlined.ChatBubbleOutline,
+            label = if (commentCount == "0") null else commentCount,
             onClick = onCommentClick
         )
 
-        IconButton(
-            onClick = onSharePost,
-            modifier = Modifier.size(32.dp)
+        Spacer(modifier = Modifier.weight(1f))
+
+        CommunityInteractionChip(
+            icon = Icons.AutoMirrored.Outlined.Send,
+            label = "Share",
+            onClick = onShare
+        )
+    }
+}
+
+@Composable
+private fun LikeDislikeCombinedPill(
+    isLiked: Boolean,
+    likeCount: String,
+    onLikeToggle: () -> Unit,
+    onDislike: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onLikeToggle
+                    )
+                    .padding(start = 12.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = if (isLiked) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
+                    contentDescription = null,
+                    tint = if (isLiked) ColorLike else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+                if (likeCount != "0") {
+                    Text(
+                        text = likeCount,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(16.dp)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+            )
+
+            Box(
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDislike
+                    )
+                    .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.ThumbDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityInteractionChip(
+    icon: ImageVector,
+    label: String? = null,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() },
+            onClick = onClick
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Outlined.Send, // Use Icons.AutoMirrored.Outlined.Send for RTL support
-                contentDescription = "Share post",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(24.dp) // Instagram icons are usually slightly larger than 20dp
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp)
             )
+            if (!label.isNullOrEmpty()) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }
@@ -418,129 +619,84 @@ private fun sharePost(
         action = Intent.ACTION_SEND
         val deepLink = "https://youtubex.com/post/$postId"
         val shareText = "Check out this post from $username on YoutubeX:\n\n$body\n\n$deepLink"
-
         putExtra(Intent.EXTRA_TEXT, shareText)
         type = "text/plain"
     }
-
-    val shareIntent = Intent.createChooser(sendIntent, "Share post via")
-    context.startActivity(shareIntent)
-}
-
-
-@Composable
-private fun ActionButton(
-    imageVector: ImageVector,
-    count: String,
-    tint: Color,
-    onClick: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        if (count != "0") {
-            Text(
-                text = count,
-                style = MaterialTheme.typography.labelSmall,
-                color = tint.copy(alpha = 0.9f)
-            )
-        }
-    }
+    context.startActivity(Intent.createChooser(sendIntent, "Share post via"))
 }
 
 @Preview
 @Composable
 fun PostSkeleton() {
-    LazyColumn(
-        userScrollEnabled = false
-    ) {
+    LazyColumn(userScrollEnabled = false) {
         items(4) {
-            PostsShimmer()
+            CommunityPostShimmer()
         }
     }
 }
 
 @Composable
-fun PostsShimmer() {
-    Row(
+fun CommunityPostShimmer() {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .padding(8.dp)
+            .padding(bottom = 8.dp)
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .shimmerEffect()
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Box(
+                    modifier = Modifier
+                        .width(100.dp)
+                        .height(14.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .shimmerEffect()
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .width(60.dp)
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .shimmerEffect()
+                )
+            }
+        }
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(horizontal = 12.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .shimmerEffect()
         )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .width(140.dp)
-                    .height(18.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .shimmerEffect()
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(16.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .shimmerEffect()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .height(16.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .shimmerEffect()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .shimmerEffect()
-            )
-        }
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun PostItemPreview() {
+private fun CommunityPostCardPreview() {
     YTTheme(darkTheme = true) {
-        PostItem(
+        CommunityPostCard(
             post = Post(
                 id = "",
                 avatarUrl = "",
                 username = "Mohammad Faisal",
                 timestamp = "1h ago",
                 body = "Hey Developers, welcome to my YoutubeX App.",
-                imageUrls = listOf(""),
+                imageUrls = listOf("", ""),
                 likeCount = "899",
                 commentCount = "200",
                 isLiked = true

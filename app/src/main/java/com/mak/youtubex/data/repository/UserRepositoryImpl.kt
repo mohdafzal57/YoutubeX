@@ -170,12 +170,11 @@ class UserRepositoryImpl @Inject constructor(
 
     override
     suspend fun signOut(): Result<Unit, NetworkError> {
+        tokenManager.clearSession()
+        postDao.clearAll()
+        remoteKeysDao.clearRemoteKeys()
         return safeCall {
             userApi.signOut()
-        }.onSuccess {
-            tokenManager.clearSession()
-            postDao.clearAll()
-            remoteKeysDao.clearRemoteKeys()
         }
     }
 

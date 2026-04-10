@@ -116,4 +116,9 @@ class SignInViewModel @Inject constructor(
             null
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+        println("VIEWMODEL_S SignIN cleared")
+    }
 }

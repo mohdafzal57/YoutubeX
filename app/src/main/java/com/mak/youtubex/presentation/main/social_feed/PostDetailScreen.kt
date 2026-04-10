@@ -112,7 +112,7 @@ fun PostDetailScreen(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        PostItem(
+                        CommunityPostCard(
                             post = state.post,
                             onAction = { /* TODO: Implement actions if needed */ },
                             onCommentClick = { /* TODO: Implement comments */ },

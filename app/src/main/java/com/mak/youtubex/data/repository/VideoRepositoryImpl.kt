@@ -35,6 +35,8 @@ class VideoRepositoryImpl @Inject constructor(
     override suspend fun uploadVideo(
         request: VideoUploadRequest
     ): Result<Unit, NetworkError> {
+        // todo: android -> cloudinary -> webhook -> nodejs -> mongodb
+        // work manager for background process
         return safeCall {
             videoApi.publishAVideo(
                 videoFile = request.videoFile.toVideoMultipart(contentResolver, "videoFile"),

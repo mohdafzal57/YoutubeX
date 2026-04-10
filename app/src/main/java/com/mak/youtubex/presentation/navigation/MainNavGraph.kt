@@ -15,7 +15,7 @@ import com.mak.youtubex.presentation.main.home.HomeScreen
 import com.mak.youtubex.presentation.main.player.PlayerScreen
 import com.mak.youtubex.presentation.main.player.PlayerViewModel
 import com.mak.youtubex.presentation.main.search.SearchScreen
-import com.mak.youtubex.presentation.main.settings.ProfileScreen
+import com.mak.youtubex.presentation.main.settings.SettingsScreen
 import com.mak.youtubex.presentation.main.social_feed.PostDetailScreen
 import com.mak.youtubex.presentation.main.social_feed.SocialFeedScreen
 import com.mak.youtubex.presentation.main.subscription.SubscriptionScreen
@@ -23,8 +23,7 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 fun NavGraphBuilder.mainNavGraph(
-    navController: NavHostController,
-    onNavigateToAuth: () -> Unit
+    navController: NavHostController
 ) {
     navigation(
         startDestination = Screen.Home.route,
@@ -36,7 +35,6 @@ fun NavGraphBuilder.mainNavGraph(
                     navController.navigate(Screen.Player.createRoute(videoUrl, videoId))
                 },
                 onNavigateToChannel = { username ->
-                    // BEST PRACTICE: Use createRoute instead of manual string concatenation
                     navController.navigate(Screen.ChannelDetail.createRoute(username))
                 },
                 onNavigateToSearch = {
@@ -77,7 +75,7 @@ fun NavGraphBuilder.mainNavGraph(
         }
 
         composable(
-            route = Screen.ChannelDetail.route, // BEST PRACTICE: Route logic is now inside Screen.kt
+            route = Screen.ChannelDetail.route,
             arguments = listOf(
                 navArgument(Screen.ARG_USERNAME) { type = NavType.StringType }
             )
@@ -91,9 +89,10 @@ fun NavGraphBuilder.mainNavGraph(
         }
 
         composable(Screen.Settings.route) {
-            ProfileScreen(
-                onLogoutSuccess = onNavigateToAuth
-            )
+            SettingsScreen()
+        }
+        composable(Screen.Profile.route) {
+            SettingsScreen()
         }
 
         composable(
@@ -103,7 +102,6 @@ fun NavGraphBuilder.mainNavGraph(
                 navArgument(Screen.ARG_VIDEO_ID) { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            // BEST PRACTICE: Use constants for keys to avoid typos
             val encodedUrl = backStackEntry.arguments?.getString(Screen.ARG_ENCODED_URL) ?: ""
             val url = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
 
