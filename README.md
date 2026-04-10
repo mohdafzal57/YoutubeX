@@ -52,9 +52,16 @@ The project follows the **Clean Architecture** pattern to ensure scalability and
 
 ## 📸 Screenshots
 
-| Home Feed | Video Player | Social Feed |
-| :---: | :---: | :---: |
-| ![Home](https://via.placeholder.com/200x400?text=Home+Feed) | ![Player](https://via.placeholder.com/200x400?text=Video+Player) | ![Social](https://via.placeholder.com/200x400?text=Social+Feed) |
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_1_kaycgh.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843874/scs_6_ibhjsg.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_2_hfqrzb.jpg" width="230" style="margin:10px;"/>
+</p>
+
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775844514/scs_3_eyq2bd.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_5_tnoqt6.jpg" width="230" style="margin:10px;"/>
+</p>
 
 ---
-Developed by [Mohd Umar](https://github.com/yourusername)
+Developed by [Mohd Afzal](https://github.com/mohdafzal57)
