@@ -1,5 +1,9 @@
 # YouTube Clone Android App (YoutubeX - Jetpack Compose, Clean Architecture)
 
+<p align="center">
+    <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1776108770/youtube_hero_image_u2tmgz.png" alt="Hero Banner" width="75%"/>
+</p>
+
 YoutubeX is a modern **YouTube clone Android app** built using Jetpack Compose, Clean Architecture, and REST APIs.  
 It demonstrates how to build a scalable **video streaming app clone** with features like authentication, video upload, subscriptions, and offline caching.
 
@@ -93,15 +97,30 @@ It replicates core features of YouTube such as video streaming, authentication, 
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_1_kaycgh.jpg" width="230" style="margin:10px;"/>
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843874/scs_6_ibhjsg.jpg" width="230" style="margin:10px;"/>
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_2_hfqrzb.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_1_kaycgh.jpg" width="45%" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843874/scs_6_ibhjsg.jpg" width="45%" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_2_hfqrzb.jpg" width="45%" style="margin:10px;"/>
 </p>
 
 <p align="center">
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775844514/scs_3_eyq2bd.jpg" width="230" style="margin:10px;"/>
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_5_tnoqt6.jpg" width="230" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775844514/scs_3_eyq2bd.jpg" width="45%" style="margin:10px;"/>
+  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_5_tnoqt6.jpg" width="45%" style="margin:10px;"/>
 </p>
 
----
-Developed by [Mohd Afzal](https://github.com/mohdafzal57)
+## 🐛 Bug Reporting
+
+If you encounter any bugs, issues, or unexpected behavior while using YouTubeX, please feel free to [open an issue](https://github.com/mohdafzal57/YoutubeX/issues) on this repository.
+
+When reporting a bug, please include:
+
+- Device/Android version
+- Screenshots (if applicable)
+
+This helps me fix problems faster and improve the app for everyone.
+I welcome all constructive feedback and suggestions.
+
+If you find YouTubeX useful, please consider ⭐ starring the repository to help others discover it.
+
+## 📄 License
+
+YouTubeX is licensed under the [GNU GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
