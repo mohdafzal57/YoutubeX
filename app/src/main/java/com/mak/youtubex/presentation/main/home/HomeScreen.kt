@@ -1,13 +1,6 @@
 package com.mak.youtubex.presentation.main.home
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,25 +17,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.paging.LoadState
@@ -54,8 +39,11 @@ import com.mak.youtubex.presentation.main.common.EmptyState
 import com.mak.youtubex.presentation.main.common.ErrorScreen
 import com.mak.youtubex.presentation.main.common.RetryFooter
 import com.mak.youtubex.presentation.main.common.VideoItem
+import com.mak.youtubex.presentation.main.common.VideoSearchIcon
+import com.mak.youtubex.presentation.main.common.YTLogo
 import com.mak.youtubex.presentation.main.common.YTPullToRefreshBox
 import com.mak.youtubex.presentation.main.common.YTTopAppBar
+import com.mak.youtubex.presentation.main.common.shimmerEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,11 +70,18 @@ fun HomeScreen(
     }
 
     Scaffold(
-        topBar = { YTTopAppBar(onNavigateToSearch = onNavigateToSearch) }
+        topBar = {
+            YTTopAppBar(
+                navigationIcon = { YTLogo() },
+                actions = {
+                    VideoSearchIcon(onClick = onNavigateToSearch)
+                }
+            )
+        }
     ) { innerPadding ->
 
         // 3. Ensure the PullToRefresh container wraps the scrollable content
-        YTPullToRefreshBox (
+        YTPullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = { videos.refresh() },
             modifier = Modifier
@@ -94,7 +89,8 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            val shouldShowVideoSkeleton = videos.loadState.refresh is LoadState.Loading && videos.itemCount == 0
+            val shouldShowVideoSkeleton =
+                videos.loadState.refresh is LoadState.Loading && videos.itemCount == 0
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -140,9 +136,7 @@ fun HomeScreen(
                     isRetrying = videos.loadState.refresh is LoadState.Loading,
                     icon = painterResource(R.drawable.offline_dino_car)
                 )
-            }
-
-            else if (videos.loadState.refresh is LoadState.NotLoading && videos.itemCount == 0) {
+            } else if (videos.loadState.refresh is LoadState.NotLoading && videos.itemCount == 0) {
                 EmptyState(
                     title = stringResource(R.string.empty_videos_title),
                     message = stringResource(R.string.no_videos_found),
@@ -156,33 +150,6 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun Modifier.shimmerEffect(): Modifier {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnim = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmer_translation"
-    )
-
-    val shimmerColors = listOf(
-        MaterialTheme.colorScheme.surfaceVariant,
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 8f),
-        MaterialTheme.colorScheme.surfaceVariant,
-    )
-
-    return this.background(
-        brush = Brush.linearGradient(
-            colors = shimmerColors,
-            start = Offset.Zero,
-            end = Offset(x = translateAnim.value, y = translateAnim.value)
-        )
-    )
-}
 
 @Composable
 fun VideoItemSkeleton() {

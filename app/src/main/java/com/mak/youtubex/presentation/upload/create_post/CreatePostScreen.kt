@@ -68,11 +68,10 @@ import com.mak.youtubex.presentation.auth.AuthViewModel
 @Composable
 fun CreatePostScreen(
     viewModel: CreatePostViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel(),
     onCloseClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val avatar by viewModel.avatar.collectAsStateWithLifecycle()
 
     // 🔴 Handle one-time events
     LaunchedEffect(Unit) {
@@ -90,7 +89,7 @@ fun CreatePostScreen(
 
     CreatePostContent(
         postState = uiState,
-        userAvatar = (authState as? AuthState.Authenticated)?.avatar,
+        userAvatar = avatar,
 
         onTextChange = {
             viewModel.onAction(CreatePostAction.OnTextChange(it))
@@ -131,7 +130,7 @@ fun CreatePostContent(
     onRemoveMedia: (Uri) -> Unit,
 ) {
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 4)
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 4) // backend support 4 images
     ) { uris ->
         if (uris.isNotEmpty()) {
             onImagesSelected(uris)
@@ -223,7 +222,7 @@ fun CreatePostContent(
                         }
 
                         if (postState.text.isNotEmpty()) {
-                            val progress = postState.text.length / 280f
+                            val progress = postState.text.length / 300f
                             val color by animateColorAsState(
                                 targetValue = when {
                                     progress > 0.9f -> Color.Red
@@ -244,9 +243,9 @@ fun CreatePostContent(
                                     strokeWidth = 2.dp,
                                     trackColor = Color.White.copy(alpha = 0.1f)
                                 )
-                                if (postState.text.length >= 260) {
+                                if (postState.text.length >= 280) {
                                     Text(
-                                        text = (280 - postState.text.length).toString(),
+                                        text = (300 - postState.text.length).toString(),
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                         color = color
                                     )
@@ -377,7 +376,7 @@ fun SelectedImagesPreview(
             Box(
                 modifier = Modifier
                     .padding(end = 8.dp)
-                    .size(80.dp)
+                    .size(140.dp)
             ) {
                 Image(
                     painter = rememberAsyncImagePainter(uri),

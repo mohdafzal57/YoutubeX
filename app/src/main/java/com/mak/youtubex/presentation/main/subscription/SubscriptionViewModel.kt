@@ -1,7 +1,9 @@
 package com.mak.youtubex.presentation.main.subscription
 
+import android.net.Network
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mak.youtubex.core.data.util.NetworkError
 import com.mak.youtubex.core.data.util.onFailure
 import com.mak.youtubex.core.data.util.onSuccess
 import com.mak.youtubex.core.util.UiText
@@ -77,7 +79,7 @@ class SubscriptionViewModel @Inject constructor(
 
             repository.toggleSubscription(channelId)
                 .onFailure { error ->
-                    // Revert on failure
+                    if (error == NetworkError.EMPTY_HAND) return@launch
                     _uiState.value = currentState.copy(subscriptions = originalList)
                     _uiEvent.emit(SubscriptionEvent.Error(UiText.StringResource(error.asStringRes())))
                 }

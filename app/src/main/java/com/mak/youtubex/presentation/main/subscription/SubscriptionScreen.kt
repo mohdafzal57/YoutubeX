@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.PersonRemove
+import androidx.compose.material.icons.outlined.Subscriptions
+import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,11 +46,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.mak.youtubex.R
+import com.mak.youtubex.presentation.main.common.EmptyState
+import com.mak.youtubex.presentation.main.common.ErrorScreen
 import com.mak.youtubex.presentation.main.common.FullScreenLoader
 import com.mak.youtubex.presentation.main.common.YTPullToRefreshBox
 import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
@@ -85,7 +91,7 @@ fun SubscriptionScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Subscriptions",
+                        text = stringResource(R.string.subscription_title),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -118,13 +124,20 @@ fun SubscriptionScreen(
                         isRefreshing = state.isRefreshing,
                         onRefresh = viewModel::refreshSubscriptions
                     ) {
-                        if (state.subscriptions.isEmpty()) {
-                            EmptyScreen()
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 8.dp)
-                            ) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            if (state.subscriptions.isEmpty()) {
+                                item {
+                                    EmptyState(
+                                        modifier = Modifier.fillParentMaxSize(),
+                                        title = stringResource(R.string.no_subscription_found),
+                                        message = stringResource(R.string.subscription_empty_message),
+                                        icon = Icons.Outlined.TravelExplore
+                                    )
+                                }
+                            } else {
                                 items(
                                     items = state.subscriptions,
                                     key = { it.id }
@@ -201,7 +214,7 @@ fun SubscriptionItemRow(
             Icon(
                 imageVector = if (item.isNotificationEnabled) Icons.Filled.Notifications else Icons.Outlined.Notifications,
                 contentDescription = "Notifications",
-                tint = if (item.isNotificationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                tint = if (item.isNotificationEnabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -231,7 +244,7 @@ fun NotificationSettingsSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Manage Subscriptions",
+                text = stringResource(R.string.manage_subscriptions),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
             )
@@ -250,51 +263,11 @@ fun NotificationSettingsSheet(
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Unsubscribe",
+                    text = stringResource(R.string.unsubscribe),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.error
                 )
             }
         }
-    }
-}
-
-@Composable
-fun ErrorScreen(message: String, onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.CloudOff,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(horizontal = 32.dp)
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onRetry) {
-            Text("Retry")
-        }
-    }
-}
-
-@Composable
-fun EmptyScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "No subscriptions yet",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }

@@ -5,14 +5,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mak.youtubex.core.data.util.onFailure
 import com.mak.youtubex.core.data.util.onSuccess
+import com.mak.youtubex.core.datastore.JwtTokenManager
 import com.mak.youtubex.domain.repository.SocialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,7 +25,8 @@ import kotlin.fold
 
 @HiltViewModel
 class CreatePostViewModel @Inject constructor(
-    private val repository: SocialRepository
+    private val repository: SocialRepository,
+    private val tokenManager: JwtTokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostUiState())
@@ -28,6 +34,14 @@ class CreatePostViewModel @Inject constructor(
 
     private val _event = MutableSharedFlow<CreatePostEvent>()
     val event: SharedFlow<CreatePostEvent> = _event.asSharedFlow()
+
+    val avatar: StateFlow<String?> = tokenManager.session
+        .map { it.avatar }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            null
+        )
 
     fun onAction(action: CreatePostAction) {
         when (action) {

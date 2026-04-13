@@ -45,7 +45,7 @@ fun NavGraphBuilder.mainNavGraph(
 
         composable(Screen.SocialFeed.route) {
             SocialFeedScreen(
-                onNavigationToSearch = {
+                onNavigateToSearch = {
                     navController.navigate(Screen.Search.route)
                 },
                 onNavigateToChannel = { username ->

@@ -71,5 +71,10 @@
     <string name="no_posts_found">No videos found.</string>
     <string name="empty_videos_title">Nothing to watch yet</string>
     <string name="empty_posts_title">Nothing to watch yet</string>
+    <string name="subscription_title">Subscriptions</string>
+    <string name="no_subscription_found">No subscriptions found</string>
+    <string name="subscription_empty_message">Explore and subscribe to channels you like.</string>
+    <string name="unsubscribe">Unsubscribe</string>
+    <string name="manage_subscriptions">Manage Subscriptions</string>
 
 </resources>

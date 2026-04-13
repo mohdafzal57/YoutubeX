@@ -1,6 +1,5 @@
 package com.mak.youtubex.presentation.main.common
 
-import android.R.attr.contentDescription
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,10 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,68 +39,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mak.youtubex.R
 import com.mak.youtubex.presentation.ui.theme.YTTheme
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppScaffold(
-    title: String,
-    showBackButton: Boolean = false,
-    onBackClick: () -> Unit = {},
-    showActions: Boolean = false,
-    actions: @Composable RowScope.() -> Unit = {},
-    floatingActionButton: @Composable () -> Unit = {},
-    bottomBar: @Composable () -> Unit = {},
-    snackbarHost: @Composable (() -> Unit) = {},
-    containerColor: Color = MaterialTheme.colorScheme.background,
-    contentColor: Color = MaterialTheme.colorScheme.onBackground,
-    content: @Composable (PaddingValues) -> Unit
-) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                },
-                navigationIcon = {
-                    if (showBackButton) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = contentColor
-                            )
-                        }
-                    }
-                },
-                actions = { if (showActions) actions() },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = containerColor,
-                    titleContentColor = contentColor,
-                    navigationIconContentColor = contentColor,
-                    actionIconContentColor = contentColor
-                )
-            )
-        },
-        snackbarHost = snackbarHost,
-        floatingActionButton = floatingActionButton,
-        bottomBar = bottomBar,
-        containerColor = containerColor,
-        contentColor = contentColor,
-        content = content
-    )
-}
 
 // shared/components/ErrorScreen.kt
 @Composable
@@ -303,24 +245,8 @@ fun CenteredContent(
 
 @Preview(showBackground = true)
 @Composable
-fun AppScaffoldPreview() {
-    YTTheme {
-        AppScaffold(
-            title = "YouTubeX",
-            showBackButton = true,
-            onBackClick = {},
-            content = { paddingValues ->
-                Box(
-                    modifier = Modifier
-                        .padding(paddingValues)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Content Area")
-                }
-            }
-        )
-    }
+fun YTScaffoldPreview() {
+    YTTheme {}
 }
 
 @Preview(showBackground = true)

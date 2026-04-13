@@ -16,12 +16,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -50,15 +53,19 @@ import coil.compose.AsyncImage
 import com.mak.youtubex.domain.model.Post
 import com.mak.youtubex.domain.model.UserChannel
 import com.mak.youtubex.domain.model.UserVideo
-import com.mak.youtubex.presentation.main.common.AppScaffold
 import com.mak.youtubex.presentation.main.common.BottomLoader
 import com.mak.youtubex.presentation.main.common.FullScreenLoader
 import com.mak.youtubex.presentation.main.common.RetryFooter
 import com.mak.youtubex.presentation.main.common.ShareVideoButton
+import com.mak.youtubex.presentation.main.common.YTBackButton
+import com.mak.youtubex.presentation.main.common.YTTopAppBar
 import com.mak.youtubex.presentation.main.social_feed.CommunityPostCard
+import com.mak.youtubex.presentation.main.social_feed.CommunityPostShimmer
+import com.mak.youtubex.presentation.main.social_feed.PostSkeleton
 import com.mak.youtubex.presentation.main.subscription.NotificationSettingsSheet
 import com.mak.youtubex.presentation.navigation.LocalSnackbarHostState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChannelScreen(
     onNavigateBack: () -> Unit,
@@ -86,10 +93,15 @@ fun ChannelScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        AppScaffold(
-            title = uiState.profile?.username.orEmpty(),
-            showBackButton = true,
-            onBackClick = onNavigateBack
+        Scaffold(
+            topBar = {
+                YTTopAppBar(
+                    title = uiState.profile?.username.orEmpty(),
+                    navigationIcon = {
+                        YTBackButton(onNavigateBack)
+                    },
+                )
+            }
         ) { padding ->
 
             ChannelContent(
@@ -121,8 +133,10 @@ fun ChannelScreen(
     }
 }
 
+// ── ChannelContent.kt ────────────────────────────────────────────────────────
+
 @Composable
-private fun ChannelContent(
+fun ChannelContent(
     uiState: ChannelProfileState,
     videos: LazyPagingItems<UserVideo>,
     posts: LazyPagingItems<Post>,
@@ -132,151 +146,197 @@ private fun ChannelContent(
     onSubscribeClick: () -> Unit
 ) {
     when {
-        uiState.isLoading -> {
-            FullScreenLoader()
+        uiState.isLoading -> FullScreenLoader()
+
+        uiState.profile != null -> ChannelProfileContent(
+            uiState = uiState,
+            profile = uiState.profile,
+            videos = videos,
+            posts = posts,
+            padding = padding,
+            onIntent = onIntent,
+            onPlayVideo = onPlayVideo,
+            onSubscribeClick = onSubscribeClick
+        )
+
+        else -> ErrorState(modifier = Modifier.padding(padding))
+    }
+}
+
+// ── ChannelProfileContent.kt ─────────────────────────────────────────────────
+
+@Composable
+private fun ChannelProfileContent(
+    uiState: ChannelProfileState,
+    profile: UserChannel,
+    videos: LazyPagingItems<UserVideo>,
+    posts: LazyPagingItems<Post>,
+    padding: PaddingValues,
+    onIntent: (ChannelIntent) -> Unit,
+    onPlayVideo: (String, String) -> Unit,
+    onSubscribeClick: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        channelHeaderItems(
+            profile = profile,
+            isSubscribed = uiState.isSubscribed,
+            onSubscribeClick = onSubscribeClick
+        )
+
+        stickyHeader {
+            ChannelTabs(
+                selectedTab = uiState.contentType,
+                onTabSelected = { onIntent(ChannelIntent.Content(it)) }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        uiState.profile != null -> {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(MaterialTheme.colorScheme.background),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-
-                // 🔹 Banner
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                            .aspectRatio(3.5f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        AsyncImage(
-                            model = uiState.profile.coverImage ?: "",
-                            contentDescription = "Channel Banner",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                }
-
-                // 🔹 Header
-                item {
-                    ChannelHeaderSection(uiState.profile)
-                }
-
-                // 🔹 Subscribe Button
-                item {
-                    Column {
-                        YouTubeSubscribeButton(
-                            isSubscribed = uiState.isSubscribed,
-                            onClick = onSubscribeClick,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
-
-                // 🔹 Tabs
-                item {
-                    ChannelTabs(
-                        selectedTab = uiState.contentType,
-                        onTabSelected = { onIntent(ChannelIntent.Content(it)) }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                if (uiState.contentType == ContentType.VIDEOS) {
-                    // 🔹 Video Filters
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        FilterChipsRow(
-                            selectedSort = uiState.sortType,
-                            onAction = onIntent
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    // 🔹 Video List
-                    items(
-                        count = videos.itemCount,
-                        key = videos.itemKey { it.id }
-                    ) { index ->
-                        videos[index]?.let { video ->
-                            VideoCard(
-                                video = video,
-                                onClick = {
-                                    onPlayVideo(video.videoFile, video.id)
-                                }
-                            )
-                        }
-                    }
-
-                    // 🔹 Video Paging Footer
-                    when (videos.loadState.append) {
-                        is LoadState.Loading -> {
-                            item { BottomLoader() }
-                        }
-
-                        is LoadState.Error -> {
-                            item { RetryFooter(onRetry = { videos.retry() }) }
-                        }
-
-                        else -> Unit
-                    }
-                } else {
-                    // 🔹 Posts List
-                    item { Spacer(modifier = Modifier.height(8.dp)) }
-
-                    items(
-                        count = posts.itemCount,
-                        key = posts.itemKey { it.id }
-                    ) { index ->
-                        posts[index]?.let { post ->
-                            CommunityPostCard(
-                                post = post,
-                                onAction = { /* Handle post actions if needed */ },
-                                onNavigateToChannel = { /* Already on channel */ },
-                                onCommentClick = { /* Handle comments if needed */ }
-                            )
-                        }
-                    }
-
-                    // 🔹 Posts Paging Footer
-                    when (posts.loadState.append) {
-                        is LoadState.Loading -> {
-                            item { BottomLoader() }
-                        }
-
-                        is LoadState.Error -> {
-                            item { RetryFooter(onRetry = { posts.retry() }) }
-                        }
-
-                        else -> Unit
-                    }
-                }
-            }
+        when (uiState.contentType) {
+            ContentType.VIDEOS -> channelVideoItems(
+                videos = videos,
+                sortType = uiState.sortType,
+                onIntent = onIntent,
+                onPlayVideo = onPlayVideo
+            )
+            ContentType.POSTS -> channelPostItems(posts = posts)
         }
+    }
+}
 
-        else -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Something went wrong",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+fun LazyListScope.channelHeaderItems(
+    profile: UserChannel,
+    isSubscribed: Boolean,
+    onSubscribeClick: () -> Unit
+) {
+    if (!profile.coverImage.isNullOrBlank()) {
+        item(key = "cover_banner") {
+            ChannelBanner(coverImageUrl = profile.coverImage)
         }
+    }
+
+    item(key = "channel_header") {
+        ChannelHeaderSection(profile = profile)
+    }
+
+    item(key = "subscribe_button") {
+        YouTubeSubscribeButton(
+            isSubscribed = isSubscribed,
+            onClick = onSubscribeClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+fun LazyListScope.channelVideoItems(
+    videos: LazyPagingItems<UserVideo>,
+    sortType: SortType,
+    onIntent: (ChannelIntent) -> Unit,
+    onPlayVideo: (String, String) -> Unit
+) {
+    item(key = "video_filters") {
+        Spacer(modifier = Modifier.height(8.dp))
+        FilterChipsRow(selectedSort = sortType, onAction = onIntent)
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+
+    items(
+        count = videos.itemCount,
+        key = videos.itemKey { it.id }
+    ) { index ->
+        videos[index]?.let { video ->
+            VideoCard(
+                video = video,
+                onClick = { onPlayVideo(video.videoFile, video.id) }
+            )
+        }
+    }
+
+    pagingFooter(loadState = videos.loadState.append, onRetry = videos::retry)
+}
+
+fun LazyListScope.channelPostItems(posts: LazyPagingItems<Post>) {
+    val shouldShowSkeleton =  posts.loadState.refresh is LoadState.Loading && posts.itemCount == 0
+    item(key = "posts_spacer") { Spacer(modifier = Modifier.height(8.dp)) }
+    items(4) {
+        if (shouldShowSkeleton) {
+            CommunityPostShimmer()
+        }
+    }
+
+    items(
+        count = posts.itemCount,
+        key = posts.itemKey { it.id }
+    ) { index ->
+        posts[index]?.let { post ->
+            CommunityPostCard(
+                post = post,
+                onAction = {},
+                onNavigateToChannel = {},
+                onCommentClick = {}
+            )
+        }
+    }
+
+    pagingFooter(loadState = posts.loadState.append, onRetry = posts::retry)
+}
+
+/** Reusable paging append state footer */
+private fun LazyListScope.pagingFooter(
+    loadState: LoadState,
+    onRetry: () -> Unit
+) {
+    when (loadState) {
+        is LoadState.Loading -> item(key = "paging_loader") { BottomLoader() }
+        is LoadState.Error -> item(key = "paging_error") { RetryFooter(onRetry = onRetry) }
+        else -> Unit
+    }
+}
+
+// ── ChannelBanner.kt ─────────────────────────────────────────────────────────
+
+@Composable
+fun ChannelBanner(coverImageUrl: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .aspectRatio(3.5f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        AsyncImage(
+            model = coverImageUrl,
+            contentDescription = "Channel Banner",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+// ── ErrorState.kt ────────────────────────────────────────────────────────────
+
+@Composable
+fun ErrorState(
+    message: String = "Something went wrong",
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
@@ -294,6 +354,25 @@ fun ChannelTabs(
         divider = {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         },
+        indicator = {
+            Box(
+                modifier = Modifier
+                    .tabIndicatorOffset(
+                        selectedTabIndex = selectedTab.ordinal,
+                        matchContentSize = true
+                    )
+                    .height(4.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 8.dp,
+                            topEnd = 8.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp
+                        )
+                    )
+                    .background(MaterialTheme.colorScheme.onBackground)
+            )
+        }
     ) {
         tabs.forEach { tab ->
             val isSelected = selectedTab == tab
@@ -301,7 +380,7 @@ fun ChannelTabs(
             Tab(
                 selected = isSelected,
                 onClick = { onTabSelected(tab) },
-                selectedContentColor = MaterialTheme.colorScheme.primary,
+                selectedContentColor = MaterialTheme.colorScheme.onBackground,
                 unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ) {
                 Text(
