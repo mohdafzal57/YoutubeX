@@ -15,6 +15,14 @@ android {
         version = release(36)
     }
 
+    val properties = Properties()
+    val localPropertiesFile = project.rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        properties.load(localPropertiesFile.inputStream())
+    }
+    val baseUrl: String = properties.getProperty("BASE_URL")
+        ?: error("BASE_URL not defined in local.properties")
+
     defaultConfig {
         applicationId = "com.mak.youtubex"
         minSdk = 24
@@ -24,12 +32,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val properties = Properties()
-        val localPropertiesFile = project.rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            properties.load(localPropertiesFile.inputStream())
-        }
-        buildConfigField("String", "BASE_URL", "\"${properties.getProperty("BASE_URL") ?: ""}\"")
+
+        buildConfigField("String", "BASE_URL", "\"${baseUrl}\"")
     }
 
     buildTypes {
@@ -39,7 +43,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "BASE_URL", "\"https://youtube-ghl3.onrender.com/api/v1/\"")
         }
     }
     compileOptions {

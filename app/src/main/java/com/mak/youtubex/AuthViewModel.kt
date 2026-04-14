@@ -1,11 +1,11 @@
-package com.mak.youtubex.presentation.auth
+package com.mak.youtubex
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mak.youtubex.core.datastore.JwtTokenManager
-import com.mak.youtubex.presentation.auth.AuthState.Loading
-import com.mak.youtubex.presentation.auth.AuthState.Authenticated
-import com.mak.youtubex.presentation.auth.AuthState.Unauthenticated
+import com.mak.youtubex.AuthState.Loading
+import com.mak.youtubex.AuthState.Authenticated
+import com.mak.youtubex.AuthState.Unauthenticated
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

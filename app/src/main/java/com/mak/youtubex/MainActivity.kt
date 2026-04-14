@@ -14,7 +14,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.mak.youtubex.data.utils.NetworkMonitor
-import com.mak.youtubex.presentation.auth.AuthViewModel
 import com.mak.youtubex.presentation.navigation.RootNavHost
 import com.mak.youtubex.presentation.ui.theme.YTTheme
 import dagger.hilt.android.AndroidEntryPoint

@@ -96,16 +96,10 @@ It replicates core features of YouTube such as video streaming, authentication, 
 
 ## 📸 Screenshots
 
-<p align="center">
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_1_kaycgh.jpg" width="45%" style="margin:10px;"/>
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843874/scs_6_ibhjsg.jpg" width="45%" style="margin:10px;"/>
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_2_hfqrzb.jpg" width="45%" style="margin:10px;"/>
-</p>
-
-<p align="center">
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775844514/scs_3_eyq2bd.jpg" width="45%" style="margin:10px;"/>
-  <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_5_tnoqt6.jpg" width="45%" style="margin:10px;"/>
-</p>
+| | | |
+|---|---|---|
+| <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_1_kaycgh.jpg" width="200"/> | <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843874/scs_6_ibhjsg.jpg" width="200"/> | <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_2_hfqrzb.jpg" width="200"/> |
+| <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775844514/scs_3_eyq2bd.jpg" width="200"/> | <img src="https://res.cloudinary.com/dxbwode3q/image/upload/v1775843404/scs_5_tnoqt6.jpg" width="200"/> | |
 
 ## 🐛 Bug Reporting
 

@@ -63,8 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
-import com.mak.youtubex.presentation.auth.AuthState
-import com.mak.youtubex.presentation.auth.AuthViewModel
+
 @Composable
 fun CreatePostScreen(
     viewModel: CreatePostViewModel = hiltViewModel(),

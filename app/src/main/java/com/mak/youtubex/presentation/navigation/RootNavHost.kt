@@ -33,7 +33,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mak.youtubex.YTAppState
 import com.mak.youtubex.R
-import com.mak.youtubex.presentation.auth.AuthState
+import com.mak.youtubex.AuthState
 import com.mak.youtubex.presentation.main.common.TOP_LEVEL_DESTINATIONS
 import com.mak.youtubex.presentation.main.common.YTNavigationBar
 
